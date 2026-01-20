@@ -1,0 +1,31 @@
+@import "tailwindcss";
+
+:root {
+  --rv-paper: #f5f0e6;
+  --rv-ink: #1a1a1a;
+  --rv-ink-muted: #4a4a4a;
+  --rv-border: rgba(26, 26, 26, 0.18);
+  --rv-gold: #b2985f;
+  --rv-rubric: #c83737;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: "EB Garamond", ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  color: var(--rv-ink);
+  background: var(--rv-paper);
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.rv-cross-glow {
+  filter: drop-shadow(0 0 10px rgba(181, 155, 97, 0.55))
+    drop-shadow(0 0 22px rgba(181, 155, 97, 0.25));
+}
