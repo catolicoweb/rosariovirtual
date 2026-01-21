@@ -5,6 +5,7 @@ import {
   PADRE_NUESTRO_TEXT,
   type SequenceConfig,
 } from './intencionesDelPapa'
+import { letaniasVirgen } from './letaniasVirgen'
 
 export type TextStep = {
   id: string
@@ -161,9 +162,8 @@ export const steps: Step[] = [
   },
   {
     id: 'letanias',
-    kind: 'text',
-    title: 'Letanías a Virgen María',
-    paragraphs: ['(Próximamente)'],
+    kind: 'sequence',
+    sequence: letaniasVirgen,
   },
   {
     id: 'cierre-final',

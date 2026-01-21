@@ -2,6 +2,7 @@ export type SequenceItem = {
   id: string
   text: string
   bead?: 'normal' | 'large'
+  response?: string
 }
 
 export type SequenceConfig = {

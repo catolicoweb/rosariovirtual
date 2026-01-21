@@ -1,23 +1,99 @@
+import { useState } from 'react'
 import PrayerCard from './PrayerCard'
+
+type MysteryId = 'gozosos' | 'dolorosos' | 'gloriosos' | 'luminosos'
 
 type Props = {
   mysteryLabel: string
+  coverImg: string
   onStart: () => void
+  onSelectMystery: (id: MysteryId) => void
+  onGoToStep: (stepId: string) => void
 }
 
-export default function Splash({ mysteryLabel, onStart }: Props) {
+export default function Splash({ mysteryLabel, coverImg, onStart, onSelectMystery, onGoToStep }: Props) {
+  const [menuOpen, setMenuOpen] = useState(false)
+
   return (
     <div className="flex flex-col gap-6">
-      <div className="text-center">
-        <div className="text-4xl font-medium tracking-wide">Rosario Meditado</div>
-        <div className="mt-2 text-lg text-[var(--rv-ink-muted)]">
-          <div>Hoy meditamos:</div>
-          <div className="font-medium text-[var(--rv-ink)]">{mysteryLabel}</div>
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setMenuOpen((v) => !v)}
+          className="absolute -right-2 -top-[26px] p-2 text-[var(--rv-ink-muted)] hover:text-[var(--rv-ink)]"
+          aria-label="Menú"
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+        </button>
+
+        {menuOpen ? (
+          <div className="absolute -right-2 top-6 z-10 w-56 rounded-xl border border-[var(--rv-border)] bg-white shadow-lg">
+            <div className="py-2">
+              <button
+                type="button"
+                className="w-full px-4 py-2 text-left text-[18px] hover:bg-[rgba(178,152,95,0.1)]"
+                onClick={() => { onSelectMystery('gozosos'); setMenuOpen(false) }}
+              >
+                Misterios Gozosos
+              </button>
+              <button
+                type="button"
+                className="w-full px-4 py-2 text-left text-[18px] hover:bg-[rgba(178,152,95,0.1)]"
+                onClick={() => { onSelectMystery('dolorosos'); setMenuOpen(false) }}
+              >
+                Misterios Dolorosos
+              </button>
+              <button
+                type="button"
+                className="w-full px-4 py-2 text-left text-[18px] hover:bg-[rgba(178,152,95,0.1)]"
+                onClick={() => { onSelectMystery('gloriosos'); setMenuOpen(false) }}
+              >
+                Misterios Gloriosos
+              </button>
+              <button
+                type="button"
+                className="w-full px-4 py-2 text-left text-[18px] hover:bg-[rgba(178,152,95,0.1)]"
+                onClick={() => { onSelectMystery('luminosos'); setMenuOpen(false) }}
+              >
+                Misterios Luminosos
+              </button>
+              <div className="my-2 border-t border-[var(--rv-border)]" />
+              <button
+                type="button"
+                className="w-full px-4 py-2 text-left text-[18px] hover:bg-[rgba(178,152,95,0.1)]"
+                onClick={() => { onGoToStep('letanias'); setMenuOpen(false) }}
+              >
+                Letanías a la Virgen
+              </button>
+              <button
+                type="button"
+                className="w-full px-4 py-2 text-left text-[18px] hover:bg-[rgba(178,152,95,0.1)]"
+                onClick={() => { onGoToStep('la-salve'); setMenuOpen(false) }}
+              >
+                Salve
+              </button>
+            </div>
+          </div>
+        ) : null}
+
+        <div className="text-center pt-5">
+          <div className="text-4xl font-medium tracking-wide">Rosario Meditado</div>
+          <div className="mt-2 text-lg text-[var(--rv-ink-muted)]">
+            <div>Hoy meditamos:</div>
+            <div className="font-medium text-[var(--rv-ink)]">{mysteryLabel}</div>
+          </div>
         </div>
       </div>
 
       <PrayerCard onAdvance={onStart}>
-        <div className="h-44 w-full rounded-xl border border-[var(--rv-border)] bg-white/40" />
+        <img
+          src={coverImg}
+          alt={mysteryLabel}
+          className="w-full rounded-xl border border-[var(--rv-border)] bg-white/40 object-contain"
+          draggable={false}
+        />
       </PrayerCard>
     </div>
   )

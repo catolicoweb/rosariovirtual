@@ -6,7 +6,7 @@ export type Mystery = {
   firstMysteryTitle: string
 }
 
-const MYSTERIES: Record<MysteryId, Mystery> = {
+export const MYSTERIES: Record<MysteryId, Mystery> = {
   gozosos: {
     id: 'gozosos',
     label: 'Misterios Gozosos',
