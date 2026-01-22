@@ -21,6 +21,16 @@ import ascencionJpg from './assets/ascencion.jpg'
 import pentecostesJpg from './assets/pentecostes.jpg'
 import asuncionVirgenJpg from './assets/asuncion-virgen.jpg'
 import coronacionVirgenJpg from './assets/coronacion-virgen.jpg'
+import bautismoJpg from './assets/bautismo.jpg'
+import bodasDeCanaJpg from './assets/bodas-de-cana.jpg'
+import reinoDiosJpg from './assets/reino-Dios.jpg'
+import transfiguracionJpg from './assets/transfiguracion.jpg'
+import eucaristiaJpg from './assets/Eucaristia.jpg'
+import anunciacionJpg from './assets/anunciacion.jpg'
+import visitaJpg from './assets/visita.jpg'
+import nacimientoJpg from './assets/Nacimiento.jpg'
+import presentacionTemploJpg from './assets/presentacion-templo.jpg'
+import perdidoHalladoTemploJpg from './assets/perdido-hallado-templo.jpg'
 import { getMysteryOfDay, MYSTERIES, type MysteryId } from './data/mystery'
 import { steps } from './data/prayerSteps'
 import { AVE_MARIA_TEXT } from './data/intencionesDelPapa'
@@ -592,7 +602,7 @@ export default function App() {
                             className={
                               p === 'Jesús dice: recen así...'
                                 ? 'text-center text-[1.02rem] text-[var(--rv-rubric)]'
-                                : 'whitespace-pre-line'
+                                : 'whitespace-pre-line text-[20px]'
                             }
                           >
                             {p}
@@ -683,18 +693,18 @@ export default function App() {
                       5: crucifixionJpg,
                     },
                     gozosos: {
-                      1: misteriosGozososJpg,
-                      2: misteriosGozososJpg,
-                      3: misteriosGozososJpg,
-                      4: misteriosGozososJpg,
-                      5: misteriosGozososJpg,
+                      1: anunciacionJpg,
+                      2: visitaJpg,
+                      3: nacimientoJpg,
+                      4: presentacionTemploJpg,
+                      5: perdidoHalladoTemploJpg,
                     },
                     luminosos: {
-                      1: misteriosLuminososJpg,
-                      2: misteriosLuminososJpg,
-                      3: misteriosLuminososJpg,
-                      4: misteriosLuminososJpg,
-                      5: misteriosLuminososJpg,
+                      1: bautismoJpg,
+                      2: bodasDeCanaJpg,
+                      3: reinoDiosJpg,
+                      4: transfiguracionJpg,
+                      5: eucaristiaJpg,
                     },
                   }
                   const mysteryNum = step.id === 'primer-misterio' ? 1
@@ -801,7 +811,7 @@ export default function App() {
                       {isAveMariaExpandable ? (
                         <>
                           {isAveMariaMisterio && meditationText ? (
-                            <p className="text-left text-[22px] italic whitespace-pre-line">
+                            <p className="text-left text-[28px] italic whitespace-pre-line">
                               {meditationText}
                             </p>
                           ) : null}
@@ -813,7 +823,7 @@ export default function App() {
                             }}
                           >
                             <div className="flex w-full items-center justify-between text-left cursor-pointer">
-                              <span className="text-[0.98rem] font-bold text-[rgba(26,26,26,0.78)]">Avemaría</span>
+                              <span className="text-[20px] font-bold text-[rgba(26,26,26,0.78)]">Avemaría</span>
                               <span
                                 className={
                                   'text-[rgba(26,26,26,0.38)] transition-transform duration-200 ' +
@@ -835,7 +845,7 @@ export default function App() {
                             {showPrayerExpanded ? (
                               <>
                                 <div className="my-3 border-t border-[rgba(178,152,95,0.2)]" />
-                                <p className="text-right whitespace-pre-line">{AVE_MARIA_TEXT}</p>
+                                <p className="text-right whitespace-pre-line text-[20px]">{AVE_MARIA_TEXT}</p>
                               </>
                             ) : null}
                           </div>
@@ -850,7 +860,7 @@ export default function App() {
                             }}
                           >
                             <div className="flex w-full items-center justify-between text-left cursor-pointer">
-                              <span className="text-[0.98rem] font-bold text-[rgba(26,26,26,0.78)]">Padre Nuestro</span>
+                              <span className="text-[20px] font-bold text-[rgba(26,26,26,0.78)]">Padre Nuestro</span>
                               <span
                                 className={
                                   'text-[rgba(26,26,26,0.38)] transition-transform duration-200 ' +
@@ -872,7 +882,7 @@ export default function App() {
                             {showPrayerExpanded ? (
                               <>
                                 <div className="my-3 border-t border-[rgba(178,152,95,0.2)]" />
-                                <p className="text-right whitespace-pre-line">{item?.text}</p>
+                                <p className="text-right whitespace-pre-line text-[20px]">{item?.text}</p>
                               </>
                             ) : null}
                           </div>
@@ -880,12 +890,12 @@ export default function App() {
                       ) : isLetanias ? (
                         <div className="space-y-4">
                           {item?.response ? (
-                            <p className="text-left text-[var(--rv-rubric)]">Responder a cada línea:<br/><span className="font-bold">"{item.response}"</span></p>
+                            <p className="text-left text-[20px] text-[var(--rv-rubric)]">Responder a cada línea:<br/><span className="font-bold">"{item.response}"</span></p>
                           ) : null}
-                          <p className="text-left whitespace-pre-line text-[var(--rv-ink)]">{item?.text}</p>
+                          <p className="text-left whitespace-pre-line text-[20px] text-[var(--rv-ink)]">{item?.text}</p>
                         </div>
                       ) : (
-                        <p className="text-center whitespace-pre-line">{item?.text}</p>
+                        <p className="text-center whitespace-pre-line text-[20px]">{item?.text}</p>
                       )}
                     </PrayerCard>
                   </>

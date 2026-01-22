@@ -82,7 +82,7 @@ export default function Splash({ mysteryLabel, coverImg, onStart, onSelectMyster
           <div className="text-4xl font-medium tracking-wide">Rosario Meditado</div>
           <div className="mt-2 text-lg text-[var(--rv-ink-muted)]">
             <div>Hoy meditamos:</div>
-            <div className="font-medium text-[var(--rv-ink)]">{mysteryLabel}</div>
+            <div className="font-medium text-[25px] text-[#b2985f]">{mysteryLabel}</div>
           </div>
         </div>
       </div>
