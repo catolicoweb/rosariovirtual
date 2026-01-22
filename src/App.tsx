@@ -34,6 +34,7 @@ import perdidoHalladoTemploJpg from './assets/perdido-hallado-templo.jpg'
 import { getMysteryOfDay, MYSTERIES, type MysteryId } from './data/mystery'
 import { steps } from './data/prayerSteps'
 import { AVE_MARIA_TEXT } from './data/intencionesDelPapa'
+import { letaniasVirgen } from './data/letaniasVirgen'
 
 const PRIMER_MISTERIO_MEDITACIONES = [
   '“En verdad os digo, quedaréis tristes, pero vuestra tristeza se volverá en gozo.”',
@@ -302,9 +303,11 @@ type Screen =
   | { kind: 'splash' }
   | { kind: 'step'; stepIndex: number; sequenceIndex: number }
   | { kind: 'done' }
+  | { kind: 'standalone'; prayerId: 'letanias' | 'salve'; stepIndex: number }
 
 export default function App() {
   const [mystery, setMystery] = useState(() => getMysteryOfDay())
+  const [isManuallySelected, setIsManuallySelected] = useState(false)
 
   const activeSteps = useMemo(() => {
     // All mystery types now have full support
@@ -387,6 +390,11 @@ export default function App() {
   function computeNext(prev: Screen): Screen {
     if (prev.kind === 'splash') return { kind: 'step', stepIndex: 0, sequenceIndex: 0 }
     if (prev.kind === 'done') return prev
+    if (prev.kind === 'standalone') {
+      const maxIndex = prev.prayerId === 'letanias' ? letaniasVirgen.items.length - 1 : 5
+      if (prev.stepIndex >= maxIndex) return { kind: 'splash' }
+      return { kind: 'standalone', prayerId: prev.prayerId, stepIndex: prev.stepIndex + 1 }
+    }
 
     const step = activeSteps[prev.stepIndex]
     if (!step) return { kind: 'done' }
@@ -409,6 +417,10 @@ export default function App() {
   function computePrev(prev: Screen): Screen {
     if (prev.kind === 'splash') return prev
     if (prev.kind === 'done') return { kind: 'step', stepIndex: activeSteps.length - 1, sequenceIndex: 0 }
+    if (prev.kind === 'standalone') {
+      if (prev.stepIndex <= 0) return { kind: 'splash' }
+      return { kind: 'standalone', prayerId: prev.prayerId, stepIndex: prev.stepIndex - 1 }
+    }
 
     const step = activeSteps[prev.stepIndex]
     if (!step) return { kind: 'splash' }
@@ -505,9 +517,12 @@ export default function App() {
               onStart={advance}
               onSelectMystery={(id: MysteryId) => {
                 setMystery(MYSTERIES[id])
-                advance()
+                setIsManuallySelected(true)
               }}
-              onGoToStep={goToStepId}
+              isManuallySelected={isManuallySelected}
+              onStandalonePrayer={(prayerId) => {
+                navigate({ kind: 'standalone', prayerId, stepIndex: 0 })
+              }}
             />
           ) : null}
 
@@ -911,6 +926,50 @@ export default function App() {
                   Que el Señor te conceda perseverancia y paz.
                 </p>
               </PrayerCard>
+            </>
+          ) : null}
+
+          {screen.kind === 'standalone' ? (
+            <>
+              {screen.prayerId === 'letanias' ? (
+                <PrayerCard
+                  title={letaniasVirgen.title}
+                  onAdvance={advance}
+                >
+                  <div className="space-y-4">
+                    {letaniasVirgen.items[screen.stepIndex]?.response ? (
+                      <p className="text-left text-[20px] text-[var(--rv-rubric)]">
+                        Responder a cada línea:<br/>
+                        <span className="font-bold">"{letaniasVirgen.items[screen.stepIndex].response}"</span>
+                      </p>
+                    ) : null}
+                    <p className="text-left whitespace-pre-line text-[20px] text-[var(--rv-ink)]">
+                      {letaniasVirgen.items[screen.stepIndex]?.text}
+                    </p>
+                  </div>
+                </PrayerCard>
+              ) : (
+                <PrayerCard
+                  title="La Salve"
+                  onAdvance={restart}
+                >
+                  <p className="text-center whitespace-pre-line text-[20px]">
+                    Dios te salve, Reina y Madre de misericordia,{'\n'}
+                    vida, dulzura y esperanza nuestra.{'\n\n'}
+                    Dios te salve.{'\n\n'}
+                    A Ti clamamos los desterrados hijos de Eva,{'\n'}
+                    a Ti suspiramos, gimiendo y llorando en este valle de lágrimas.{'\n\n'}
+                    Ea, pues, Señora Abogada Nuestra,{'\n'}
+                    vuelve a nosotros tus ojos misericordiosos,{'\n'}
+                    y después de este destierro, muéstranos a Jesús,{'\n'}
+                    fruto bendito de tu vientre.{'\n\n'}
+                    Oh, clemente, oh piadosa, oh dulce Virgen María.{'\n\n'}
+                    Ruega por nosotros, Santa Madre de Dios,{'\n'}
+                    para que seamos dignos de alcanzar las promesas de Nuestro Señor Jesucristo.{'\n\n'}
+                    Amén
+                  </p>
+                </PrayerCard>
+              )}
             </>
           ) : null}
       </motion.div>

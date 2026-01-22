@@ -8,10 +8,11 @@ type Props = {
   coverImg: string
   onStart: () => void
   onSelectMystery: (id: MysteryId) => void
-  onGoToStep: (stepId: string) => void
+  onStandalonePrayer: (prayerId: 'letanias' | 'salve') => void
+  isManuallySelected: boolean
 }
 
-export default function Splash({ mysteryLabel, coverImg, onStart, onSelectMystery, onGoToStep }: Props) {
+export default function Splash({ mysteryLabel, coverImg, onStart, onSelectMystery, onStandalonePrayer, isManuallySelected }: Props) {
   const [menuOpen, setMenuOpen] = useState(false)
 
   return (
@@ -63,14 +64,14 @@ export default function Splash({ mysteryLabel, coverImg, onStart, onSelectMyster
               <button
                 type="button"
                 className="w-full px-4 py-2 text-left text-[18px] hover:bg-[rgba(178,152,95,0.1)]"
-                onClick={() => { onGoToStep('letanias'); setMenuOpen(false) }}
+                onClick={() => { onStandalonePrayer('letanias'); setMenuOpen(false) }}
               >
                 Letanías a la Virgen
               </button>
               <button
                 type="button"
                 className="w-full px-4 py-2 text-left text-[18px] hover:bg-[rgba(178,152,95,0.1)]"
-                onClick={() => { onGoToStep('la-salve'); setMenuOpen(false) }}
+                onClick={() => { onStandalonePrayer('salve'); setMenuOpen(false) }}
               >
                 Salve
               </button>
@@ -81,7 +82,7 @@ export default function Splash({ mysteryLabel, coverImg, onStart, onSelectMyster
         <div className="text-center pt-5">
           <div className="text-4xl font-medium tracking-wide">Rosario Meditado</div>
           <div className="mt-2 text-lg text-[var(--rv-ink-muted)]">
-            <div>Hoy meditamos:</div>
+            {!isManuallySelected && <div>Hoy meditamos:</div>}
             <div className="font-medium text-[25px] text-[#b2985f]">{mysteryLabel}</div>
           </div>
         </div>
