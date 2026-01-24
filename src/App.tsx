@@ -299,6 +299,38 @@ const LUMINOSO_5_MEDITACIONES = [
   '"Yo le resucitaré en el último día."',
 ]
 
+// Biblical citations for each mystery
+const CITAS_BIBLICAS: Record<string, Record<number, string>> = {
+  gozosos: {
+    1: 'Lc. 1, 26-38',
+    2: 'Lc. 1, 29-45',
+    3: 'Lc. 2, 1-7',
+    4: 'Lc. 2, 22-24. 33-35',
+    5: 'Lc. 2, 41-51',
+  },
+  luminosos: {
+    1: 'Mt. 3, 13-17',
+    2: 'Jn. 2, 1-12',
+    3: 'Lc. 4, 14-21; Mc. 1, 14-15',
+    4: 'Lc. 9, 28-36; Mt. 17, 1-9',
+    5: 'Mt. 26, 26-29; Mc. 14, 22-25',
+  },
+  dolorosos: {
+    1: 'Mt. 26, 36-46; Mc. 14, 32-37',
+    2: 'Jn. 19, 1; Mc. 15, 13-15',
+    3: 'Jn. 19, 2-7; Mc. 15, 16-20',
+    4: 'Jn. 19, 16-17; Mt. 27, 21-22; Lc. 23, 26-32',
+    5: 'Jn. 19, 18-36; Mc. 15, 23-39; Lc. 23, 33-38',
+  },
+  gloriosos: {
+    1: 'Jn. 20, 1-10; Mt. 28, 1-8; Mc. 16, 5-7',
+    2: 'Lc. 24, 50-53; Mc. 16, 19; Hech. 1, 8-11',
+    3: 'Hech. 1, 12-14; Hech 2, 1-4',
+    4: 'Jn. 14, 1-3; Lc. 1, 37',
+    5: 'Lc. 1, 46-55',
+  },
+}
+
 type Screen =
   | { kind: 'splash' }
   | { kind: 'step'; stepIndex: number; sequenceIndex: number }
@@ -508,6 +540,7 @@ export default function App() {
           {screen.kind === 'splash' ? (
             <Splash
               mysteryLabel={mystery.label}
+              mysteryDays={mystery.days}
               coverImg={{
                 gloriosos: misteriosGloriososJpg,
                 dolorosos: misteriosDolorososJpg,
@@ -733,6 +766,7 @@ export default function App() {
                     label: labels[mysteryNum],
                     title: titles[mystery.id]?.[mysteryNum as 1|2|3|4|5] ?? '',
                     imgSrc: images[mystery.id]?.[mysteryNum] ?? misteriosGloriososJpg,
+                    cita: CITAS_BIBLICAS[mystery.id]?.[mysteryNum] ?? '',
                   }
                 })()
 
@@ -795,6 +829,11 @@ export default function App() {
                           <div className="mt-1 text-3xl font-medium tracking-wide text-[var(--rv-ink)]">
                             {mysteryHeader.title}
                           </div>
+                          {mysteryHeader.cita ? (
+                            <div className="mt-1 text-[var(--rv-rubric)]">
+                              {mysteryHeader.cita}
+                            </div>
+                          ) : null}
                           <div className="mt-4 flex justify-center">
                             <img
                               src={mysteryHeader.imgSrc}

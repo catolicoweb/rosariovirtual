@@ -4,6 +4,7 @@ export type Mystery = {
   id: MysteryId
   label: string
   firstMysteryTitle: string
+  days: string
 }
 
 export const MYSTERIES: Record<MysteryId, Mystery> = {
@@ -11,21 +12,25 @@ export const MYSTERIES: Record<MysteryId, Mystery> = {
     id: 'gozosos',
     label: 'Misterios Gozosos',
     firstMysteryTitle: 'La Anunciación del Ángel a María',
+    days: 'Lunes y Sábados',
   },
   dolorosos: {
     id: 'dolorosos',
     label: 'Misterios Dolorosos',
     firstMysteryTitle: 'La Oración de Jesús en el Huerto',
+    days: 'Martes y Viernes',
   },
   gloriosos: {
     id: 'gloriosos',
     label: 'Misterios Gloriosos',
     firstMysteryTitle: 'Resurrección de Jesús',
+    days: 'Miércoles y Domingos',
   },
   luminosos: {
     id: 'luminosos',
     label: 'Misterios Luminosos',
     firstMysteryTitle: 'El Bautismo de Jesús en el Jordán',
+    days: 'Jueves',
   },
 }
 

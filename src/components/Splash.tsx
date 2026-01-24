@@ -5,6 +5,7 @@ type MysteryId = 'gozosos' | 'dolorosos' | 'gloriosos' | 'luminosos'
 
 type Props = {
   mysteryLabel: string
+  mysteryDays: string
   coverImg: string
   onStart: () => void
   onSelectMystery: (id: MysteryId) => void
@@ -12,7 +13,7 @@ type Props = {
   isManuallySelected: boolean
 }
 
-export default function Splash({ mysteryLabel, coverImg, onStart, onSelectMystery, onStandalonePrayer, isManuallySelected }: Props) {
+export default function Splash({ mysteryLabel, mysteryDays, coverImg, onStart, onSelectMystery, onStandalonePrayer, isManuallySelected }: Props) {
   const [menuOpen, setMenuOpen] = useState(false)
 
   return (
@@ -84,6 +85,7 @@ export default function Splash({ mysteryLabel, coverImg, onStart, onSelectMyster
           <div className="mt-2 text-lg text-[var(--rv-ink-muted)]">
             {!isManuallySelected && <div>Hoy meditamos:</div>}
             <div className="font-medium text-[25px] text-[#b2985f]">{mysteryLabel}</div>
+            {isManuallySelected && <div className="text-[var(--rv-ink-muted)]">{mysteryDays}</div>}
           </div>
         </div>
       </div>
