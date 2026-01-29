@@ -252,11 +252,11 @@ const LUMINOSO_2_MEDITACIONES = [
   '"Estaba allí la madre de Jesús."',
   '"También fue invitado Jesús con sus discípulos."',
   '"Faltó el vino, y la madre de Jesús le dijo: No tienen vino."',
-  '"Jesús le dijo: Mujer, ¿qué nos va a ti y a mí?"',
-  '"Su madre dijo a los sirvientes: Haced lo que Él os diga."',
-  '"Jesús les dijo: Llenad de agua las tinajas."',
-  '"Ahora sacad y llevadlo al maestresala."',
-  '"El maestresala probó el agua convertida en vino."',
+  '"Jesús le respondió: «Mujer, ¿qué tenemos que ver nosotros? Mi hora no ha llegado todavía»"',
+  '"Pero su madre dijo a los sirvientes: «Hagan todo lo que él les diga»"',
+  '"Jesús dijo a los sirvientes: «Llenen de agua estas tinajas». Y las llenaron hasta el borde."',
+  '"«Saquen ahora, agregó Jesús, y lleven al encargado del banquete». Así lo hicieron."',
+  '"El encargado probó el agua cambiada en vino."',
   '"Este fue el primer signo de Jesús, y manifestó su gloria."',
 ]
 
