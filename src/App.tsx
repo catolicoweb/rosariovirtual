@@ -698,7 +698,7 @@ export default function App() {
                   const titles = {
                     gloriosos: {
                       1: 'Resurrección de Jesús',
-                      2: 'Ascención del Señor',
+                      2: 'Ascensión del Señor',
                       3: 'Pentecostés',
                       4: 'La Asunción de María al Cielo',
                       5: 'La Coronación de María en el Cielo',
