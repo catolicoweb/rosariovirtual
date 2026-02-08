@@ -39,5 +39,13 @@ export const letaniasVirgen: SequenceConfig = {
       text: 'Reina de los Ángeles,\nReina de los Patriarcas,\nReina de los Profetas,\nReina de los Apóstoles,\nReina de los Mártires,\nReina de los Confesores,\nReina de las Vírgenes,\nReina de todos los Santos,\nReina concebida sin pecado original,\nReina asunta a los Cielos,\nReina del Santísimo Rosario,\nReina de la familia,\nReina de la paz.',
       response: 'Ruega por nosotros...',
     },
+    {
+      id: 'letania-8',
+      text: 'Cordero de Dios, que quitas el pecado del mundo,\nperdónanos, Señor.\n\nCordero de Dios, que quitas el pecado del mundo,\nescúchanos, Señor.\n\nCordero de Dios, que quitas el pecado del mundo,\nten misericordia de nosotros.\n\nRuega por nosotros, Santa Madre de Dios.\nPara que seamos dignos de las promesas de Cristo.',
+    },
+    {
+      id: 'letania-9',
+      text: 'Te rogamos nos concedas,\nSeñor Dios nuestro,\ngozar de continua salud de alma y cuerpo,\ny por la gloriosa intercesión\nde la bienaventurada siempre Virgen María,\nvernos libres de las tristezas de la vida presente\ny disfrutar de las alegrías eternas.\nPor Cristo nuestro Señor.\nAmén.',
+    },
   ],
 }
