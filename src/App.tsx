@@ -838,7 +838,7 @@ export default function App() {
                             <img
                               src={mysteryHeader.imgSrc}
                               alt=""
-                              className="h-44 w-full rounded-xl border border-[var(--rv-border)] bg-white/40 object-cover"
+                              className="h-auto max-h-80 w-full rounded-xl border border-[var(--rv-border)] bg-white/40 object-contain"
                               draggable={false}
                             />
                           </div>
@@ -850,7 +850,7 @@ export default function App() {
                           <img
                             src={banderaVaticanoJpg}
                             alt=""
-                            className="h-44 w-full rounded-xl border border-[var(--rv-border)] bg-white/40 object-cover"
+                            className="h-auto max-h-80 w-full rounded-xl border border-[var(--rv-border)] bg-white/40 object-contain"
                             draggable={false}
                           />
                         </div>
