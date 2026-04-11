@@ -9,7 +9,7 @@ type Props = {
   coverImg: string
   onStart: () => void
   onSelectMystery: (id: MysteryId) => void
-  onStandalonePrayer: (prayerId: 'letanias' | 'salve') => void
+  onStandalonePrayer: (prayerId: 'letanias' | 'salve' | 'divina-misericordia') => void
   isManuallySelected: boolean
 }
 
@@ -31,7 +31,7 @@ export default function Splash({ mysteryLabel, mysteryDays, coverImg, onStart, o
         </button>
 
         {menuOpen ? (
-          <div className="absolute -right-2 top-6 z-10 w-56 rounded-xl border border-[var(--rv-border)] bg-white shadow-lg">
+          <div className="absolute -right-2 top-6 z-10 w-80 rounded-xl border border-[var(--rv-border)] bg-white shadow-lg">
             <div className="py-2">
               <button
                 type="button"
@@ -62,6 +62,13 @@ export default function Splash({ mysteryLabel, mysteryDays, coverImg, onStart, o
                 Misterios Luminosos
               </button>
               <div className="my-2 border-t border-[var(--rv-border)]" />
+              <button
+                type="button"
+                className="w-full px-4 py-2 text-left text-[18px] hover:bg-[rgba(178,152,95,0.1)]"
+                onClick={() => { onStandalonePrayer('divina-misericordia'); setMenuOpen(false) }}
+              >
+                Coronilla de la Divina Misericordia
+              </button>
               <button
                 type="button"
                 className="w-full px-4 py-2 text-left text-[18px] hover:bg-[rgba(178,152,95,0.1)]"

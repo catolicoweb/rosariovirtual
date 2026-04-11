@@ -31,9 +31,15 @@ import visitaJpg from './assets/visita.jpg'
 import nacimientoJpg from './assets/Nacimiento.jpg'
 import presentacionTemploJpg from './assets/presentacion-templo.jpg'
 import perdidoHalladoTemploJpg from './assets/perdido-hallado-templo.jpg'
+import divinaMisericordiaJpg from './assets/DivinaMisericordia.jpg'
+import divinaMisericordiaHuertoJpg from './assets/divinamicericordia-huerto.jpg'
+import divinaMisericordiaFlagelacionJpg from './assets/divinamicericordia-flagelacion.jpg'
+import divinaMisericordiaCoronacionJpg from './assets/divinamicericordia-coronacion.jpg'
+import divinaMisericordiaCruzCuestasJpg from './assets/divinamicericordia-cruzcuestas.jpg'
+import divinaMisericordiaCruzJpg from './assets/divinamicericordia-cruz.jpg'
 import { getMysteryOfDay, MYSTERIES, type MysteryId } from './data/mystery'
 import { steps } from './data/prayerSteps'
-import { AVE_MARIA_TEXT } from './data/intencionesDelPapa'
+import { AVE_MARIA_TEXT, GLORIA_TEXT } from './data/intencionesDelPapa'
 import { letaniasVirgen } from './data/letaniasVirgen'
 
 const PRIMER_MISTERIO_MEDITACIONES = [
@@ -335,7 +341,7 @@ type Screen =
   | { kind: 'splash' }
   | { kind: 'step'; stepIndex: number; sequenceIndex: number }
   | { kind: 'done' }
-  | { kind: 'standalone'; prayerId: 'letanias' | 'salve'; stepIndex: number }
+  | { kind: 'standalone'; prayerId: 'letanias' | 'salve' | 'divina-misericordia'; stepIndex: number }
 
 export default function App() {
   const [mystery, setMystery] = useState(() => getMysteryOfDay())
@@ -346,7 +352,12 @@ export default function App() {
     return steps
   }, [])
 
-  const [screen, setScreen] = useState<Screen>({ kind: 'splash' })
+  const [screen, setScreen] = useState<Screen>(() => {
+    if (typeof window !== 'undefined' && window.location.pathname.endsWith('/divinamisericordia')) {
+      return { kind: 'standalone', prayerId: 'divina-misericordia', stepIndex: 0 }
+    }
+    return { kind: 'splash' }
+  })
   const [isFadingOut, setIsFadingOut] = useState(false)
   const pendingRef = useRef<Screen | null>(null)
   const timeoutRef = useRef<number | null>(null)
@@ -370,7 +381,53 @@ export default function App() {
     }
   }, [showPrayerExpanded])
 
+  useEffect(() => {
+    const isDivinaMisericordia =
+      screen.kind === 'standalone' && screen.prayerId === 'divina-misericordia'
+    const currentPath = window.location.pathname
+    const onDivinaPath = currentPath.endsWith('/divinamisericordia')
+
+    if (isDivinaMisericordia && !onDivinaPath) {
+      const base = currentPath.replace(/\/$/, '')
+      window.history.pushState(null, '', `${base}/divinamisericordia`)
+    } else if (!isDivinaMisericordia && onDivinaPath) {
+      const base = currentPath.replace(/\/divinamisericordia$/, '') || '/'
+      window.history.pushState(null, '', base)
+    }
+  }, [screen])
+
+  useEffect(() => {
+    const handler = () => {
+      if (window.location.pathname.endsWith('/divinamisericordia')) {
+        setScreen({ kind: 'standalone', prayerId: 'divina-misericordia', stepIndex: 0 })
+      } else {
+        setScreen({ kind: 'splash' })
+      }
+    }
+    window.addEventListener('popstate', handler)
+    return () => window.removeEventListener('popstate', handler)
+  }, [])
+
   const beadsModel = (() => {
+    if (
+      screen.kind === 'standalone' &&
+      screen.prayerId === 'divina-misericordia' &&
+      screen.stepIndex >= 4 &&
+      screen.stepIndex <= 58
+    ) {
+      const beadInDecade = (screen.stepIndex - 4) % 11
+      const beadKinds: Array<'large' | 'normal'> = [
+        'large',
+        ...(Array.from({ length: 10 }, () => 'normal') as 'normal'[]),
+      ]
+      return {
+        total: beadKinds.length,
+        completed: beadInDecade,
+        currentIndex: beadInDecade,
+        beadKinds,
+      }
+    }
+
     if (screen.kind !== 'step') return null
     const step = activeSteps[screen.stepIndex]
     if (!step) return null
@@ -423,7 +480,12 @@ export default function App() {
     if (prev.kind === 'splash') return { kind: 'step', stepIndex: 0, sequenceIndex: 0 }
     if (prev.kind === 'done') return prev
     if (prev.kind === 'standalone') {
-      const maxIndex = prev.prayerId === 'letanias' ? letaniasVirgen.items.length - 1 : 5
+      const maxIndex =
+        prev.prayerId === 'letanias'
+          ? letaniasVirgen.items.length - 1
+          : prev.prayerId === 'divina-misericordia'
+            ? 63
+            : 5
       if (prev.stepIndex >= maxIndex) return { kind: 'splash' }
       return { kind: 'standalone', prayerId: prev.prayerId, stepIndex: prev.stepIndex + 1 }
     }
@@ -521,6 +583,13 @@ export default function App() {
   const bottomAction = (() => {
     if (screen.kind === 'splash') return { label: 'Iniciar', onClick: advance }
     if (screen.kind === 'done') return { label: 'Volver al inicio', onClick: restart }
+    if (
+      screen.kind === 'standalone' &&
+      screen.prayerId === 'divina-misericordia' &&
+      screen.stepIndex === 63
+    ) {
+      return { label: 'Finalizar', onClick: advance }
+    }
     return { label: 'Siguiente', onClick: advance }
   })()
 
@@ -970,7 +1039,148 @@ export default function App() {
 
           {screen.kind === 'standalone' ? (
             <>
-              {screen.prayerId === 'letanias' ? (
+              {screen.prayerId === 'divina-misericordia' ? (
+                screen.stepIndex === 0 ? (
+                  <PrayerCard
+                    title="Coronilla de la Divina Misericordia"
+                    onAdvance={advance}
+                  >
+                    <img
+                      src={divinaMisericordiaJpg}
+                      alt="Divina Misericordia"
+                      className="w-full rounded-xl border border-[var(--rv-border)] bg-white/40 object-contain"
+                      draggable={false}
+                    />
+                    <p className="whitespace-pre-line text-center text-[20px]">
+                      Por la señal de la Santa Cruz, de nuestros enemigos, líbranos Señor, Dios nuestro.
+                      {'\n\n'}
+                      En el nombre del Padre, del Hijo y del Espíritu Santo. Amén.
+                    </p>
+                  </PrayerCard>
+                ) : screen.stepIndex === 1 ? (
+                  (() => {
+                    const credoStep = activeSteps.find(
+                      (s): s is Extract<typeof s, { kind: 'text' }> =>
+                        s.kind === 'text' && s.id === 'credo',
+                    )
+                    return (
+                      <PrayerCard
+                        title={credoStep?.title ?? 'Credo'}
+                        mark={<CrossIcon glow size="large" />}
+                        onAdvance={advance}
+                      >
+                        {credoStep?.paragraphs.map((p) => (
+                          <p key={p} className="whitespace-pre-line text-[20px]">
+                            {p}
+                          </p>
+                        ))}
+                      </PrayerCard>
+                    )
+                  })()
+                ) : screen.stepIndex === 2 ? (
+                  <PrayerCard
+                    title="Ave María"
+                    mark={<CrossIcon glow size="large" />}
+                    onAdvance={advance}
+                  >
+                    <p className="whitespace-pre-line text-[20px]">{AVE_MARIA_TEXT}</p>
+                  </PrayerCard>
+                ) : screen.stepIndex === 3 ? (
+                  <PrayerCard
+                    title="Gloria"
+                    mark={<CrossIcon glow size="large" />}
+                    onAdvance={advance}
+                  >
+                    <p className="whitespace-pre-line text-[20px]">{GLORIA_TEXT}</p>
+                  </PrayerCard>
+                ) : screen.stepIndex >= 59 && screen.stepIndex <= 61 ? (
+                  <PrayerCard onAdvance={advance}>
+                    <img
+                      src={divinaMisericordiaJpg}
+                      alt="Divina Misericordia"
+                      className="w-full rounded-xl border border-[var(--rv-border)] bg-white/40 object-contain"
+                      draggable={false}
+                    />
+                    <p className="text-center text-[var(--rv-rubric)] text-[18px]">
+                      {`${screen.stepIndex - 58}/3`}
+                    </p>
+                    <p className="whitespace-pre-line text-[20px]">
+                      Santo Dios, Santo Fuerte, Santo Inmortal,{'\n'}
+                      ten misericordia de nosotros y del mundo entero.
+                    </p>
+                  </PrayerCard>
+                ) : screen.stepIndex === 62 ? (
+                  <PrayerCard onAdvance={advance}>
+                    <img
+                      src={divinaMisericordiaJpg}
+                      alt="Divina Misericordia"
+                      className="w-full rounded-xl border border-[var(--rv-border)] bg-white/40 object-contain"
+                      draggable={false}
+                    />
+                    <p className="whitespace-pre-line text-[20px]">
+                      Oh Sangre y Agua que brotasteis del Corazón de Jesús como una fuente de
+                      misericordia para nosotros, en Vos confío.
+                    </p>
+                  </PrayerCard>
+                ) : screen.stepIndex === 63 ? (
+                  <PrayerCard
+                    mark={<CrossIcon glow size="large" />}
+                    onAdvance={advance}
+                  >
+                    <p className="whitespace-pre-line text-[20px]">
+                      En el nombre del Padre, del Hijo y del Espíritu Santo.
+                    </p>
+                  </PrayerCard>
+                ) : (() => {
+                  const beadStep = screen.stepIndex - 4
+                  const decadeIdx = Math.floor(beadStep / 11)
+                  const beadInDecade = beadStep % 11
+                  const decadeImages = [
+                    divinaMisericordiaHuertoJpg,
+                    divinaMisericordiaFlagelacionJpg,
+                    divinaMisericordiaCoronacionJpg,
+                    divinaMisericordiaCruzCuestasJpg,
+                    divinaMisericordiaCruzJpg,
+                  ]
+                  const decadeAlts = [
+                    'Jesús en el huerto',
+                    'La flagelación',
+                    'La coronación de espinas',
+                    'Jesús con la cruz a cuestas',
+                    'Jesús en la cruz',
+                  ]
+                  if (beadInDecade === 0) {
+                    return (
+                      <PrayerCard onAdvance={advance}>
+                        <img
+                          src={divinaMisericordiaJpg}
+                          alt="Divina Misericordia"
+                          className="w-full rounded-xl border border-[var(--rv-border)] bg-white/40 object-contain"
+                          draggable={false}
+                        />
+                        <p className="whitespace-pre-line text-[20px]">
+                          Padre Eterno, te ofrezco el Cuerpo y Sangre, el Alma y la Divinidad de
+                          Tu Amadísimo Hijo y Señor Nuestro Jesucristo, en propiciación de
+                          nuestros pecados y los del mundo entero.
+                        </p>
+                      </PrayerCard>
+                    )
+                  }
+                  return (
+                    <PrayerCard onAdvance={advance}>
+                      <img
+                        src={decadeImages[decadeIdx]}
+                        alt={decadeAlts[decadeIdx]}
+                        className="w-full rounded-xl border border-[var(--rv-border)] bg-white/40 object-contain"
+                        draggable={false}
+                      />
+                      <p className="whitespace-pre-line text-[20px]">
+                        Por Su Dolorosa Pasión, ten misericordia de nosotros y del mundo entero.
+                      </p>
+                    </PrayerCard>
+                  )
+                })()
+              ) : screen.prayerId === 'letanias' ? (
                 <PrayerCard
                   title={letaniasVirgen.title}
                   onAdvance={advance}
