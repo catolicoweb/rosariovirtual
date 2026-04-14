@@ -39,7 +39,7 @@ import divinaMisericordiaCruzCuestasJpg from './assets/divinamicericordia-cruzcu
 import divinaMisericordiaCruzJpg from './assets/divinamicericordia-cruz.jpg'
 import { getMysteryOfDay, MYSTERIES, type MysteryId } from './data/mystery'
 import { steps } from './data/prayerSteps'
-import { AVE_MARIA_TEXT, GLORIA_TEXT } from './data/intencionesDelPapa'
+import { AVE_MARIA_TEXT } from './data/intencionesDelPapa'
 import { letaniasVirgen } from './data/letaniasVirgen'
 
 const PRIMER_MISTERIO_MEDITACIONES = [
@@ -382,6 +382,17 @@ export default function App() {
   }, [showPrayerExpanded])
 
   useEffect(() => {
+    if (
+      screen.kind === 'standalone' &&
+      screen.prayerId === 'divina-misericordia'
+    ) {
+      document.title = 'Coronilla de la Divina Misericordia - Rosario Virtual'
+    } else {
+      document.title = 'Rosario Virtual - Reza el Rosario y la Coronilla de la Divina Misericordia'
+    }
+  }, [screen])
+
+  useEffect(() => {
     const isDivinaMisericordia =
       screen.kind === 'standalone' && screen.prayerId === 'divina-misericordia'
     const currentPath = window.location.pathname
@@ -407,6 +418,12 @@ export default function App() {
     window.addEventListener('popstate', handler)
     return () => window.removeEventListener('popstate', handler)
   }, [])
+
+  function trackEvent(name: string, params: Record<string, string | number>) {
+    if (typeof gtag === 'function') {
+      gtag('event', name, params)
+    }
+  }
 
   const beadsModel = (() => {
     if (
@@ -486,7 +503,19 @@ export default function App() {
           : prev.prayerId === 'divina-misericordia'
             ? 63
             : 5
-      if (prev.stepIndex >= maxIndex) return { kind: 'splash' }
+      if (prev.prayerId === 'divina-misericordia') {
+        const completedDecadeEnds = [14, 25, 36, 47, 58]
+        if (completedDecadeEnds.includes(prev.stepIndex)) {
+          const decadeNumber = completedDecadeEnds.indexOf(prev.stepIndex) + 1
+          trackEvent('rosary_progress', { step_number: decadeNumber, mystery_name: 'Coronilla de la Divina Misericordia' })
+        }
+      }
+      if (prev.stepIndex >= maxIndex) {
+        if (prev.prayerId === 'divina-misericordia') {
+          trackEvent('rosary_complete', { type: 'coronilla', mystery_name: 'Coronilla de la Divina Misericordia' })
+        }
+        return { kind: 'splash' }
+      }
       return { kind: 'standalone', prayerId: prev.prayerId, stepIndex: prev.stepIndex + 1 }
     }
 
@@ -498,13 +527,23 @@ export default function App() {
       if (nextSequenceIndex < step.sequence.items.length) {
         return { kind: 'step', stepIndex: prev.stepIndex, sequenceIndex: nextSequenceIndex }
       }
+      const misterioIds = ['primer-misterio', 'segundo-misterio', 'tercer-misterio', 'cuarto-misterio', 'quinto-misterio']
+      if (misterioIds.includes(step.id)) {
+        trackEvent('rosary_progress', { step_number: misterioIds.indexOf(step.id) + 1, mystery_name: mystery.label })
+      }
       const nextStepIndex = prev.stepIndex + 1
-      if (nextStepIndex >= activeSteps.length) return { kind: 'done' }
+      if (nextStepIndex >= activeSteps.length) {
+        trackEvent('rosary_complete', { type: 'santo_rosario', mystery_name: mystery.label })
+        return { kind: 'done' }
+      }
       return { kind: 'step', stepIndex: nextStepIndex, sequenceIndex: 0 }
     }
 
     const nextStepIndex = prev.stepIndex + 1
-    if (nextStepIndex >= activeSteps.length) return { kind: 'done' }
+    if (nextStepIndex >= activeSteps.length) {
+      trackEvent('rosary_complete', { type: 'santo_rosario', mystery_name: mystery.label })
+      return { kind: 'done' }
+    }
     return { kind: 'step', stepIndex: nextStepIndex, sequenceIndex: 0 }
   }
 
@@ -542,6 +581,14 @@ export default function App() {
 
   function navigate(next: Screen) {
     if (pendingRef.current || isFadingOut) return
+
+    if (screen.kind === 'splash') {
+      if (next.kind === 'step') {
+        trackEvent('rosary_start', { type: 'santo_rosario', mystery_name: mystery.label })
+      } else if (next.kind === 'standalone' && next.prayerId === 'divina-misericordia') {
+        trackEvent('rosary_start', { type: 'coronilla', mystery_name: 'Coronilla de la Divina Misericordia' })
+      }
+    }
 
     pendingRef.current = next
     setIsFadingOut(true)
@@ -1083,7 +1130,10 @@ export default function App() {
                     mark={<CrossIcon glow size="large" />}
                     onAdvance={advance}
                   >
-                    <p className="whitespace-pre-line text-[20px]">{AVE_MARIA_TEXT}</p>
+                    <p className="text-[20px]">
+                      Dios te salve María, llena eres de gracia, el Señor es contigo; bendita tú eres entre todas las mujeres, y bendito es el fruto de tu vientre, Jesús. Santa María, Madre de Dios, ruega por nosotros, pecadores, ahora y en la hora de nuestra muerte.
+                    </p>
+                    <p className="text-right text-[20px]">Amén.</p>
                   </PrayerCard>
                 ) : screen.stepIndex === 3 ? (
                   <PrayerCard
@@ -1091,7 +1141,10 @@ export default function App() {
                     mark={<CrossIcon glow size="large" />}
                     onAdvance={advance}
                   >
-                    <p className="whitespace-pre-line text-[20px]">{GLORIA_TEXT}</p>
+                    <p className="text-[20px]">
+                      Gloria al Padre, y al Hijo, y al Espíritu Santo. Como era en el principio, ahora y siempre, por los siglos de los siglos.
+                    </p>
+                    <p className="text-right text-[20px]">Amén.</p>
                   </PrayerCard>
                 ) : screen.stepIndex >= 59 && screen.stepIndex <= 61 ? (
                   <PrayerCard onAdvance={advance}>
