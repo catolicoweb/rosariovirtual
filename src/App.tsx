@@ -407,13 +407,12 @@ export default function App() {
     }
   }, [showMeditaciones])
 
-  const [idioma, setIdioma] = useState<'es' | 'la' | 'en'>(() => {
+  const [idioma, setIdioma] = useState<'es' | 'en'>(() => {
     if (typeof window === 'undefined') return 'es'
     try {
       const raw = window.localStorage.getItem('rv_idioma')
-      if (raw === 'la') return 'la'
       if (raw === 'en') return 'en'
-      if (raw === 'es') return 'es'
+      if (raw === 'es' || raw === 'la') return 'es'
       // No saved preference: detect from browser language
       const lang = navigator.language ?? ''
       if (lang.startsWith('en')) return 'en'
@@ -431,9 +430,28 @@ export default function App() {
     }
   }, [idioma])
 
+  const [latinPrayers, setLatinPrayers] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false
+    try {
+      // Migrate legacy 'la' idioma setting
+      if (window.localStorage.getItem('rv_idioma') === 'la') return true
+      return window.localStorage.getItem('rv_latin_prayers') === '1'
+    } catch {
+      return false
+    }
+  })
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem('rv_latin_prayers', latinPrayers ? '1' : '0')
+    } catch {
+      return
+    }
+  }, [latinPrayers])
+
   function prayerText(itemId: string | undefined, originalText: string | undefined): string {
     if (!itemId || !originalText) return originalText ?? ''
-    if (idioma === 'la') {
+    if (latinPrayers) {
       if (itemId === 'padre-nuestro') return PATER_NOSTER_TEXT
       if (itemId.startsWith('avemaria-')) return AVE_MARIA_LATIN_TEXT
       if (itemId === 'gloria') return GLORIA_LATIN_TEXT
@@ -760,7 +778,9 @@ export default function App() {
               showMeditaciones={showMeditaciones}
               onToggleMeditaciones={() => setShowMeditaciones(v => !v)}
               idioma={idioma}
-              onSetIdioma={(id) => setIdioma(id as 'es' | 'la' | 'en')}
+              onSetIdioma={setIdioma}
+              latinPrayers={latinPrayers}
+              onToggleLatinPrayers={() => setLatinPrayers(v => !v)}
             />
           ) : null}
 
@@ -795,7 +815,8 @@ export default function App() {
                     <>
                       <PrayerCard
                         title={
-                          step.id === 'credo' && idioma === 'en' ? "Apostles' Creed"
+                          step.id === 'credo' && latinPrayers ? 'Credo'
+                          : step.id === 'credo' && idioma === 'en' ? "Apostles' Creed"
                           : step.id === 'la-salve' && idioma === 'en' ? 'Hail Holy Queen'
                           : step.title
                         }
@@ -853,9 +874,9 @@ export default function App() {
                           </button>
                         </>
                       ) : (
-                        (idioma === 'la' && step.id === 'inicio' ? SIGNUM_CRUCIS_PARAGRAPHS
+                        (latinPrayers && step.id === 'inicio' ? SIGNUM_CRUCIS_PARAGRAPHS
                           : idioma === 'en' && step.id === 'inicio' ? SIGN_OF_CROSS_EN_PARAGRAPHS
-                          : idioma === 'la' && step.id === 'credo' ? CREDO_LATIN_PARAGRAPHS
+                          : latinPrayers && step.id === 'credo' ? CREDO_LATIN_PARAGRAPHS
                           : idioma === 'en' && step.id === 'credo' ? APOSTLES_CREED_EN_PARAGRAPHS
                           : step.paragraphs
                         ).map((p: string) => (
@@ -1169,10 +1190,10 @@ export default function App() {
                                   </button>
                                   <button
                                     type="button"
-                                    onClick={(e) => { e.stopPropagation(); setIdioma('la') }}
+                                    onClick={(e) => { e.stopPropagation(); setLatinPrayers(v => !v) }}
                                     className={
                                       'rounded-md px-2 py-1 text-2xl transition-opacity ' +
-                                      (idioma === 'la' ? 'ring-2 ring-[#b2985f] opacity-100' : 'opacity-40')
+                                      (latinPrayers ? 'ring-2 ring-[#b2985f] opacity-100' : 'opacity-40')
                                     }
                                     aria-label="Latín"
                                   >
@@ -1263,8 +1284,8 @@ export default function App() {
                               <>
                                 <div className="my-3 border-t border-[rgba(178,152,95,0.2)]" />
                                 <div className="text-[20px]">
-                                  <p>{(idioma === 'la' ? AVE_MARIA_LATIN_TEXT : idioma === 'en' ? HAIL_MARY_EN_TEXT : AVE_MARIA_TEXT).replace(/ A[m]e[n]\.$/i, '')}</p>
-                                  <p className="text-right mt-1">{idioma === 'la' ? 'Amen.' : idioma === 'en' ? 'Amen.' : 'Amén.'}</p>
+                                  <p>{(latinPrayers ? AVE_MARIA_LATIN_TEXT : idioma === 'en' ? HAIL_MARY_EN_TEXT : AVE_MARIA_TEXT).replace(/ A[m]e[n]\.$/i, '')}</p>
+                                  <p className="text-right mt-1">{latinPrayers || idioma === 'en' ? 'Amen.' : 'Amén.'}</p>
                                 </div>
                               </>
                             ) : null}
@@ -1361,7 +1382,7 @@ export default function App() {
                       draggable={false}
                     />
                     <p className="whitespace-pre-line text-center text-[20px]">
-                      {idioma === 'la'
+                      {latinPrayers
                         ? SIGNUM_CRUCIS_PARAGRAPHS.join('\n\n')
                         : idioma === 'en'
                         ? SIGN_OF_CROSS_EN_PARAGRAPHS.join('\n\n')
@@ -1376,11 +1397,11 @@ export default function App() {
                     )
                     return (
                       <PrayerCard
-                        title={idioma === 'en' ? "Apostles' Creed" : 'Credo'}
+                        title={latinPrayers ? 'Credo' : idioma === 'en' ? "Apostles' Creed" : 'Credo'}
                         mark={<CrossIcon glow size="large" />}
                         onAdvance={advance}
                       >
-                        {(idioma === 'la' ? CREDO_LATIN_PARAGRAPHS : idioma === 'en' ? APOSTLES_CREED_EN_PARAGRAPHS : credoStep?.paragraphs ?? []).map((p) => (
+                        {(latinPrayers ? CREDO_LATIN_PARAGRAPHS : idioma === 'en' ? APOSTLES_CREED_EN_PARAGRAPHS : credoStep?.paragraphs ?? []).map((p) => (
                           <p key={p} className="whitespace-pre-line text-[20px]">
                             {p}
                           </p>
@@ -1395,24 +1416,24 @@ export default function App() {
                     onAdvance={advance}
                   >
                     <p className="text-[20px]">
-                      {(idioma === 'la' ? AVE_MARIA_LATIN_TEXT : idioma === 'en' ? HAIL_MARY_EN_TEXT : AVE_MARIA_TEXT).replace(/ A[m]e[n]\.$/i, '')}
+                      {(latinPrayers ? AVE_MARIA_LATIN_TEXT : idioma === 'en' ? HAIL_MARY_EN_TEXT : AVE_MARIA_TEXT).replace(/ A[m]e[n]\.$/i, '')}
                     </p>
-                    <p className="text-right text-[20px]">{idioma === 'la' || idioma === 'en' ? 'Amen.' : 'Amén.'}</p>
+                    <p className="text-right text-[20px]">{latinPrayers || idioma === 'en' ? 'Amen.' : 'Amén.'}</p>
                   </PrayerCard>
                 ) : screen.stepIndex === 3 ? (
                   <PrayerCard
-                    title={idioma === 'la' ? 'Glória Patri' : idioma === 'en' ? 'Glory Be' : 'Gloria'}
+                    title={latinPrayers ? 'Glória Patri' : idioma === 'en' ? 'Glory Be' : 'Gloria'}
                     mark={<CrossIcon glow size="large" />}
                     onAdvance={advance}
                   >
                     <p className="whitespace-pre-line text-[20px]">
-                      {idioma === 'la'
+                      {latinPrayers
                         ? GLORIA_LATIN_TEXT.replace(/\nAmen$/, '')
                         : idioma === 'en'
                         ? GLORY_BE_EN_TEXT.replace(/\nAmen$/, '')
                         : 'Gloria al Padre, y al Hijo, y al Espíritu Santo. Como era en el principio, ahora y siempre, por los siglos de los siglos.'}
                     </p>
-                    <p className="text-right text-[20px]">{idioma === 'la' || idioma === 'en' ? 'Amen.' : 'Amén.'}</p>
+                    <p className="text-right text-[20px]">{latinPrayers || idioma === 'en' ? 'Amen.' : 'Amén.'}</p>
                   </PrayerCard>
                 ) : screen.stepIndex >= 59 && screen.stepIndex <= 61 ? (
                   <PrayerCard onAdvance={advance}>

@@ -13,11 +13,13 @@ type Props = {
   isManuallySelected: boolean
   showMeditaciones: boolean
   onToggleMeditaciones: () => void
-  idioma: 'es' | 'la' | 'en'
-  onSetIdioma: (id: 'es' | 'la' | 'en') => void
+  idioma: 'es' | 'en'
+  onSetIdioma: (id: 'es' | 'en') => void
+  latinPrayers: boolean
+  onToggleLatinPrayers: () => void
 }
 
-export default function Splash({ mysteryLabel, mysteryDays, coverImg, onStart, onSelectMystery, onStandalonePrayer, isManuallySelected, showMeditaciones, onToggleMeditaciones, idioma, onSetIdioma }: Props) {
+export default function Splash({ mysteryLabel, mysteryDays, coverImg, onStart, onSelectMystery, onStandalonePrayer, isManuallySelected, showMeditaciones, onToggleMeditaciones, idioma, onSetIdioma, latinPrayers, onToggleLatinPrayers }: Props) {
   const [menuOpen, setMenuOpen] = useState(false)
 
   return (
@@ -136,10 +138,10 @@ export default function Splash({ mysteryLabel, mysteryDays, coverImg, onStart, o
                   </button>
                   <button
                     type="button"
-                    onClick={(e) => { e.stopPropagation(); onSetIdioma('la') }}
+                    onClick={(e) => { e.stopPropagation(); onToggleLatinPrayers() }}
                     className={
                       'rounded-md px-2 py-1 text-2xl transition-opacity ' +
-                      (idioma === 'la' ? 'ring-2 ring-[#b2985f] opacity-100' : 'opacity-40')
+                      (latinPrayers ? 'ring-2 ring-[#b2985f] opacity-100' : 'opacity-40')
                     }
                     aria-label="Latín"
                   >
