@@ -508,6 +508,28 @@ export default function App() {
     return () => window.removeEventListener('popstate', handler)
   }, [])
 
+  function PrayerToggle({ checked, onToggle }: { checked: boolean; onToggle: () => void }) {
+    return (
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        onClick={(e) => { e.stopPropagation(); onToggle() }}
+        className={
+          'relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-200 ' +
+          (checked ? 'bg-[#b2985f]' : 'bg-[rgba(26,26,26,0.2)]')
+        }
+      >
+        <span
+          className={
+            'inline-block h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 ' +
+            (checked ? 'translate-x-6' : 'translate-x-1')
+          }
+        />
+      </button>
+    )
+  }
+
   const prayerMenuSlot = (
     <>
       <button
@@ -524,51 +546,58 @@ export default function App() {
       </button>
       {prayerMenuOpen ? (
         <div
-          className="absolute right-3 top-12 z-20 w-64 rounded-xl border border-[var(--rv-border)] bg-white shadow-lg"
+          className="fixed inset-0 z-50 flex flex-col bg-white"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="flex items-center justify-between px-4 py-3">
-            <span className="text-[18px]">{idioma === 'en' ? 'Meditations' : 'Meditaciones'}</span>
+          {/* Header */}
+          <div className="flex items-center justify-between border-b border-[var(--rv-border)] px-5 pb-4 pt-10">
+            <span className="text-xl font-semibold text-[var(--rv-ink)]">
+              {idioma === 'en' ? 'Settings' : 'Configuración'}
+            </span>
             <button
               type="button"
-              role="switch"
-              aria-checked={showMeditaciones}
-              onClick={(e) => { e.stopPropagation(); setShowMeditaciones(v => !v) }}
-              className={'relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ' + (showMeditaciones ? 'bg-[#b2985f]' : 'bg-[rgba(26,26,26,0.2)]')}
+              onClick={(e) => { e.stopPropagation(); setPrayerMenuOpen(false) }}
+              className="-mr-2 p-2 text-[var(--rv-ink-muted)]"
+              aria-label={idioma === 'en' ? 'Close' : 'Cerrar'}
             >
-              <span className={'inline-block h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ' + (showMeditaciones ? 'translate-x-6' : 'translate-x-1')} />
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
             </button>
           </div>
-          <div className="border-t border-[var(--rv-border)]" />
-          <div className="flex items-center justify-between px-4 py-3">
-            <span className="text-[18px]">{idioma === 'en' ? 'Language' : 'Idioma'}</span>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); setIdioma('es') }}
-                className={'rounded-md px-2 py-1 text-2xl ' + (idioma === 'es' ? 'ring-2 ring-[#b2985f] bg-[rgba(178,152,95,0.10)]' : '')}
-                aria-label="Español"
-              >🇪🇸</button>
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); setIdioma('en') }}
-                className={'rounded-md px-2 py-1 text-2xl ' + (idioma === 'en' ? 'ring-2 ring-[#b2985f] bg-[rgba(178,152,95,0.10)]' : '')}
-                aria-label="English"
-              >🇬🇧</button>
+
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto">
+            <div className="px-5 pb-1 pt-5 text-[13px] font-semibold uppercase tracking-[0.08em] text-[var(--rv-ink-muted)]">
+              {idioma === 'en' ? 'Preferences' : 'Preferencias'}
             </div>
-          </div>
-          <div className="border-t border-[var(--rv-border)]" />
-          <div className="flex items-center justify-between px-4 py-3">
-            <span className="text-[18px]">{idioma === 'en' ? 'Latin prayers' : 'Oraciones en latín'}</span>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={latinPrayers}
-              onClick={(e) => { e.stopPropagation(); setLatinPrayers(v => !v) }}
-              className={'relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ' + (latinPrayers ? 'bg-[#b2985f]' : 'bg-[rgba(26,26,26,0.2)]')}
-            >
-              <span className={'inline-block h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ' + (latinPrayers ? 'translate-x-6' : 'translate-x-1')} />
-            </button>
+            <div className="flex items-center justify-between px-5 py-4">
+              <span className="text-[18px]">{idioma === 'en' ? 'Meditations' : 'Meditaciones'}</span>
+              <PrayerToggle checked={showMeditaciones} onToggle={() => setShowMeditaciones(v => !v)} />
+            </div>
+            <div className="mx-5 border-t border-[var(--rv-border)]" />
+            <div className="flex items-center justify-between px-5 py-4">
+              <span className="text-[18px]">{idioma === 'en' ? 'Language' : 'Idioma'}</span>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setIdioma('es') }}
+                  className={'rounded-md px-2 py-1 text-2xl ' + (idioma === 'es' ? 'ring-2 ring-[#b2985f] bg-[rgba(178,152,95,0.10)]' : '')}
+                  aria-label="Español"
+                >🇪🇸</button>
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setIdioma('en') }}
+                  className={'rounded-md px-2 py-1 text-2xl ' + (idioma === 'en' ? 'ring-2 ring-[#b2985f] bg-[rgba(178,152,95,0.10)]' : '')}
+                  aria-label="English"
+                >🇬🇧</button>
+              </div>
+            </div>
+            <div className="mx-5 border-t border-[var(--rv-border)]" />
+            <div className="flex items-center justify-between px-5 py-4">
+              <span className="text-[18px]">{idioma === 'en' ? 'Latin prayers' : 'Oraciones en latín'}</span>
+              <PrayerToggle checked={latinPrayers} onToggle={() => setLatinPrayers(v => !v)} />
+            </div>
           </div>
         </div>
       ) : null}
