@@ -119,7 +119,7 @@ export default function Splash({ mysteryLabel, mysteryDays, coverImg, onStart, o
                     onClick={(e) => { e.stopPropagation(); onSetIdioma('es') }}
                     className={
                       'rounded-md px-2 py-1 text-2xl transition-opacity ' +
-                      (idioma === 'es' ? 'ring-2 ring-[#b2985f] opacity-100' : 'opacity-40')
+                      (idioma === 'es' ? 'ring-2 ring-[#b2985f] bg-[rgba(178,152,95,0.10)]' : '')
                     }
                     aria-label="Español"
                   >
@@ -130,7 +130,7 @@ export default function Splash({ mysteryLabel, mysteryDays, coverImg, onStart, o
                     onClick={(e) => { e.stopPropagation(); onSetIdioma('en') }}
                     className={
                       'rounded-md px-2 py-1 text-2xl transition-opacity ' +
-                      (idioma === 'en' ? 'ring-2 ring-[#b2985f] opacity-100' : 'opacity-40')
+                      (idioma === 'en' ? 'ring-2 ring-[#b2985f] bg-[rgba(178,152,95,0.10)]' : '')
                     }
                     aria-label="English"
                   >
@@ -141,7 +141,7 @@ export default function Splash({ mysteryLabel, mysteryDays, coverImg, onStart, o
                     onClick={(e) => { e.stopPropagation(); onToggleLatinPrayers() }}
                     className={
                       'rounded-md px-2 py-1 text-2xl transition-opacity ' +
-                      (latinPrayers ? 'ring-2 ring-[#b2985f] opacity-100' : 'opacity-40')
+                      (latinPrayers ? 'ring-2 ring-[#b2985f] bg-[rgba(178,152,95,0.10)]' : '')
                     }
                     aria-label="Latín"
                   >

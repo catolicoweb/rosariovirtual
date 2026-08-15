@@ -1171,7 +1171,7 @@ export default function App() {
                                     onClick={(e) => { e.stopPropagation(); setIdioma('es') }}
                                     className={
                                       'rounded-md px-2 py-1 text-2xl transition-opacity ' +
-                                      (idioma === 'es' ? 'ring-2 ring-[#b2985f] opacity-100' : 'opacity-40')
+                                      (idioma === 'es' ? 'ring-2 ring-[#b2985f] bg-[rgba(178,152,95,0.10)]' : '')
                                     }
                                     aria-label="Español"
                                   >
@@ -1182,7 +1182,7 @@ export default function App() {
                                     onClick={(e) => { e.stopPropagation(); setIdioma('en') }}
                                     className={
                                       'rounded-md px-2 py-1 text-2xl transition-opacity ' +
-                                      (idioma === 'en' ? 'ring-2 ring-[#b2985f] opacity-100' : 'opacity-40')
+                                      (idioma === 'en' ? 'ring-2 ring-[#b2985f] bg-[rgba(178,152,95,0.10)]' : '')
                                     }
                                     aria-label="English"
                                   >
@@ -1193,7 +1193,7 @@ export default function App() {
                                     onClick={(e) => { e.stopPropagation(); setLatinPrayers(v => !v) }}
                                     className={
                                       'rounded-md px-2 py-1 text-2xl transition-opacity ' +
-                                      (latinPrayers ? 'ring-2 ring-[#b2985f] opacity-100' : 'opacity-40')
+                                      (latinPrayers ? 'ring-2 ring-[#b2985f] bg-[rgba(178,152,95,0.10)]' : '')
                                     }
                                     aria-label="Latín"
                                   >
