@@ -413,6 +413,10 @@ export default function App() {
       const raw = window.localStorage.getItem('rv_idioma')
       if (raw === 'la') return 'la'
       if (raw === 'en') return 'en'
+      if (raw === 'es') return 'es'
+      // No saved preference: detect from browser language
+      const lang = navigator.language ?? ''
+      if (lang.startsWith('en')) return 'en'
       return 'es'
     } catch {
       return 'es'
