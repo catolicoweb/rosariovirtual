@@ -714,6 +714,19 @@ export default function App() {
     navigate(computePrev(screen))
   }
 
+  const inCardHamburger = (
+    <button
+      type="button"
+      onClick={(e) => { e.stopPropagation(); setGlobalMenuOpen(true) }}
+      className="absolute right-3 top-3 z-10 p-2 text-[var(--rv-ink-muted)] hover:text-[var(--rv-ink)]"
+      aria-label={idioma === 'en' ? 'Menu' : 'Menú'}
+    >
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      </svg>
+    </button>
+  )
+
   const bottomAction = (() => {
     const labelStart = idioma === 'en' ? 'Begin' : 'Iniciar'
     const labelBack = idioma === 'en' ? 'Back to start' : 'Volver al inicio'
@@ -820,7 +833,7 @@ export default function App() {
                         }
                         mark={crossMark}
                         onAdvance={isAntesDeFinalizar || isLetanias || isCierreFinal ? undefined : advance}
-                        
+                      menuSlot={inCardHamburger}
                       >
                       {isAntesDeFinalizar ? (
                         <>
@@ -1121,7 +1134,7 @@ export default function App() {
                         : step.id === 'intenciones-del-papa' && idioma === 'en' ? "Pope's Intentions"
                         : step.sequence.title}
                       onAdvance={advance}
-                      
+                    menuSlot={inCardHamburger}
                     >
                       {mysteryHeader ? (
                         <div className="text-center">
@@ -1275,7 +1288,7 @@ export default function App() {
 
           {screen.kind === 'done' ? (
             <>
-              <PrayerCard title={idioma === 'en' ? 'The End' : 'Fin'}>
+              <PrayerCard title={idioma === 'en' ? 'The End' : 'Fin'} menuSlot={inCardHamburger}>
                 <p className="text-center">
                   {idioma === 'en'
                     ? 'May the Lord grant you perseverance and peace.'
@@ -1292,7 +1305,7 @@ export default function App() {
                   <PrayerCard
                     title={idioma === 'en' ? 'Chaplet of Divine Mercy' : 'Coronilla de la Divina Misericordia'}
                     onAdvance={advance}
-                    
+                  menuSlot={inCardHamburger}
                   >
                     <img
                       src={divinaMisericordiaJpg}
@@ -1319,7 +1332,7 @@ export default function App() {
                         title={latinPrayers ? 'Credo' : idioma === 'en' ? "Apostles' Creed" : 'Credo'}
                         mark={<CrossIcon glow size="large" />}
                         onAdvance={advance}
-                        
+                      menuSlot={inCardHamburger}
                       >
                         {(latinPrayers ? CREDO_LATIN_PARAGRAPHS : idioma === 'en' ? APOSTLES_CREED_EN_PARAGRAPHS : credoStep?.paragraphs ?? []).map((p) => (
                           <p key={p} className="whitespace-pre-line text-[20px]">
@@ -1334,7 +1347,7 @@ export default function App() {
                     title={idioma === 'en' ? 'Hail Mary' : 'Ave María'}
                     mark={<CrossIcon glow size="large" />}
                     onAdvance={advance}
-                    
+                  menuSlot={inCardHamburger}
                   >
                     <p className="text-[20px]">
                       {(latinPrayers ? AVE_MARIA_LATIN_TEXT : idioma === 'en' ? HAIL_MARY_EN_TEXT : AVE_MARIA_TEXT).replace(/ A[m]e[n]\.$/i, '')}
@@ -1346,7 +1359,7 @@ export default function App() {
                     title={latinPrayers ? 'Glória Patri' : idioma === 'en' ? 'Glory Be' : 'Gloria'}
                     mark={<CrossIcon glow size="large" />}
                     onAdvance={advance}
-                    
+                  menuSlot={inCardHamburger}
                   >
                     <p className="whitespace-pre-line text-[20px]">
                       {latinPrayers
@@ -1358,7 +1371,7 @@ export default function App() {
                     <p className="text-right text-[20px]">{latinPrayers || idioma === 'en' ? 'Amen.' : 'Amén.'}</p>
                   </PrayerCard>
                 ) : screen.stepIndex >= 59 && screen.stepIndex <= 61 ? (
-                  <PrayerCard onAdvance={advance} >
+                  <PrayerCard onAdvance={advance} menuSlot={inCardHamburger}>
                     <img
                       src={divinaMisericordiaJpg}
                       alt="Divina Misericordia"
@@ -1375,7 +1388,7 @@ export default function App() {
                     </p>
                   </PrayerCard>
                 ) : screen.stepIndex === 62 ? (
-                  <PrayerCard onAdvance={advance} >
+                  <PrayerCard onAdvance={advance} menuSlot={inCardHamburger}>
                     <img
                       src={divinaMisericordiaJpg}
                       alt="Divina Misericordia"
@@ -1392,7 +1405,7 @@ export default function App() {
                   <PrayerCard
                     mark={<CrossIcon glow size="large" />}
                     onAdvance={advance}
-                    
+                  menuSlot={inCardHamburger}
                   >
                     <p className="whitespace-pre-line text-[20px]">
                       {idioma === 'en'
@@ -1420,7 +1433,7 @@ export default function App() {
                   ]
                   if (beadInDecade === 0) {
                     return (
-                      <PrayerCard onAdvance={advance} >
+                      <PrayerCard onAdvance={advance} menuSlot={inCardHamburger}>
                         <img
                           src={divinaMisericordiaJpg}
                           alt="Divina Misericordia"
@@ -1436,7 +1449,7 @@ export default function App() {
                     )
                   }
                   return (
-                    <PrayerCard onAdvance={advance} >
+                    <PrayerCard onAdvance={advance} menuSlot={inCardHamburger}>
                       <img
                         src={decadeImages[decadeIdx]}
                         alt={decadeAlts[decadeIdx]}
@@ -1459,7 +1472,7 @@ export default function App() {
                     <PrayerCard
                       title={letaniaData.title}
                       onAdvance={advance}
-                      
+                    menuSlot={inCardHamburger}
                     >
                       <div className="space-y-4">
                         {letaniaItem?.response ? (
@@ -1479,7 +1492,7 @@ export default function App() {
                 <PrayerCard
                   title={idioma === 'en' ? 'Hail Holy Queen' : 'La Salve'}
                   onAdvance={restart}
-                  
+                menuSlot={inCardHamburger}
                 >
                   <p className="text-center whitespace-pre-line text-[20px]">
                     {idioma === 'en'
@@ -1492,17 +1505,19 @@ export default function App() {
           ) : null}
       </motion.div>
 
-      {/* Global hamburger button — visible on every screen */}
-      <button
-        type="button"
-        onClick={() => setGlobalMenuOpen(true)}
-        className="fixed right-4 top-4 z-40 p-2 text-[var(--rv-ink-muted)] hover:text-[var(--rv-ink)]"
-        aria-label={idioma === 'en' ? 'Menu' : 'Menú'}
-      >
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-        </svg>
-      </button>
+      {/* Hamburger on splash screen only — during prayer it lives inside the PrayerCard */}
+      {screen.kind === 'splash' ? (
+        <button
+          type="button"
+          onClick={() => setGlobalMenuOpen(true)}
+          className="fixed right-4 top-4 z-40 p-2 text-[var(--rv-ink-muted)] hover:text-[var(--rv-ink)]"
+          aria-label={idioma === 'en' ? 'Menu' : 'Menú'}
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+        </button>
+      ) : null}
 
       {/* Global full-viewport drawer */}
       {globalMenuOpen ? (

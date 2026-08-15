@@ -6,9 +6,10 @@ type Props = {
   mark?: ReactNode
   children: ReactNode
   onAdvance?: () => void
+  menuSlot?: ReactNode
 }
 
-export default function PrayerCard({ title, subtitle, mark, children, onAdvance }: Props) {
+export default function PrayerCard({ title, subtitle, mark, children, onAdvance, menuSlot }: Props) {
   return (
     <div
       className="relative w-full rounded-2xl border border-[var(--rv-border)] bg-white/60 px-6 py-7 shadow-sm backdrop-blur-sm"
@@ -20,6 +21,7 @@ export default function PrayerCard({ title, subtitle, mark, children, onAdvance 
         if (e.key === 'Enter' || e.key === ' ') onAdvance()
       }}
     >
+      {menuSlot}
       <div className="flex flex-col gap-4">
         {mark ? <div className="flex justify-center">{mark}</div> : null}
         {title ? (
