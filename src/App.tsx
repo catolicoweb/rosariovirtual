@@ -1170,7 +1170,7 @@ export default function App() {
                                     type="button"
                                     onClick={(e) => { e.stopPropagation(); setIdioma('es') }}
                                     className={
-                                      'rounded-md px-2 py-1 text-2xl transition-opacity ' +
+                                      'rounded-md px-2 py-1 text-2xl ' +
                                       (idioma === 'es' ? 'ring-2 ring-[#b2985f] bg-[rgba(178,152,95,0.10)]' : '')
                                     }
                                     aria-label="Español"
@@ -1181,25 +1181,34 @@ export default function App() {
                                     type="button"
                                     onClick={(e) => { e.stopPropagation(); setIdioma('en') }}
                                     className={
-                                      'rounded-md px-2 py-1 text-2xl transition-opacity ' +
+                                      'rounded-md px-2 py-1 text-2xl ' +
                                       (idioma === 'en' ? 'ring-2 ring-[#b2985f] bg-[rgba(178,152,95,0.10)]' : '')
                                     }
                                     aria-label="English"
                                   >
                                     🇬🇧
                                   </button>
-                                  <button
-                                    type="button"
-                                    onClick={(e) => { e.stopPropagation(); setLatinPrayers(v => !v) }}
-                                    className={
-                                      'rounded-md px-2 py-1 text-2xl transition-opacity ' +
-                                      (latinPrayers ? 'ring-2 ring-[#b2985f] bg-[rgba(178,152,95,0.10)]' : '')
-                                    }
-                                    aria-label="Latín"
-                                  >
-                                    🇻🇦
-                                  </button>
                                 </div>
+                              </div>
+                              <div className="flex items-center justify-between px-4 py-3">
+                                <span className="text-[18px]">{idioma === 'en' ? 'Latin prayers' : 'Oraciones en latín'}</span>
+                                <button
+                                  type="button"
+                                  role="switch"
+                                  aria-checked={latinPrayers}
+                                  onClick={(e) => { e.stopPropagation(); setLatinPrayers(v => !v) }}
+                                  className={
+                                    'relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ' +
+                                    (latinPrayers ? 'bg-[#b2985f]' : 'bg-[rgba(26,26,26,0.2)]')
+                                  }
+                                >
+                                  <span
+                                    className={
+                                      'inline-block h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ' +
+                                      (latinPrayers ? 'translate-x-6' : 'translate-x-1')
+                                    }
+                                  />
+                                </button>
                               </div>
                             </div>
                           ) : null}
