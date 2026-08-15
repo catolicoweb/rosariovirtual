@@ -466,9 +466,9 @@ export default function App() {
     return originalText
   }
 
-  const [mysteryMenuOpen, setMysteryMenuOpen] = useState(false)
+  const [prayerMenuOpen, setPrayerMenuOpen] = useState(false)
 
-  useEffect(() => { setMysteryMenuOpen(false) }, [screen])
+  useEffect(() => { setPrayerMenuOpen(false) }, [screen])
 
   useEffect(() => {
     if (
@@ -507,6 +507,73 @@ export default function App() {
     window.addEventListener('popstate', handler)
     return () => window.removeEventListener('popstate', handler)
   }, [])
+
+  const prayerMenuSlot = (
+    <>
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); setPrayerMenuOpen(v => !v) }}
+        className="absolute right-3 top-3 z-10 p-2 text-[var(--rv-ink-muted)] hover:text-[var(--rv-ink)]"
+        aria-label={idioma === 'en' ? 'Options' : 'Opciones'}
+      >
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+          <circle cx="10" cy="4" r="1.5" />
+          <circle cx="10" cy="10" r="1.5" />
+          <circle cx="10" cy="16" r="1.5" />
+        </svg>
+      </button>
+      {prayerMenuOpen ? (
+        <div
+          className="absolute right-3 top-12 z-20 w-64 rounded-xl border border-[var(--rv-border)] bg-white shadow-lg"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between px-4 py-3">
+            <span className="text-[18px]">{idioma === 'en' ? 'Meditations' : 'Meditaciones'}</span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={showMeditaciones}
+              onClick={(e) => { e.stopPropagation(); setShowMeditaciones(v => !v) }}
+              className={'relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ' + (showMeditaciones ? 'bg-[#b2985f]' : 'bg-[rgba(26,26,26,0.2)]')}
+            >
+              <span className={'inline-block h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ' + (showMeditaciones ? 'translate-x-6' : 'translate-x-1')} />
+            </button>
+          </div>
+          <div className="border-t border-[var(--rv-border)]" />
+          <div className="flex items-center justify-between px-4 py-3">
+            <span className="text-[18px]">{idioma === 'en' ? 'Language' : 'Idioma'}</span>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setIdioma('es') }}
+                className={'rounded-md px-2 py-1 text-2xl ' + (idioma === 'es' ? 'ring-2 ring-[#b2985f] bg-[rgba(178,152,95,0.10)]' : '')}
+                aria-label="Español"
+              >🇪🇸</button>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setIdioma('en') }}
+                className={'rounded-md px-2 py-1 text-2xl ' + (idioma === 'en' ? 'ring-2 ring-[#b2985f] bg-[rgba(178,152,95,0.10)]' : '')}
+                aria-label="English"
+              >🇬🇧</button>
+            </div>
+          </div>
+          <div className="border-t border-[var(--rv-border)]" />
+          <div className="flex items-center justify-between px-4 py-3">
+            <span className="text-[18px]">{idioma === 'en' ? 'Latin prayers' : 'Oraciones en latín'}</span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={latinPrayers}
+              onClick={(e) => { e.stopPropagation(); setLatinPrayers(v => !v) }}
+              className={'relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ' + (latinPrayers ? 'bg-[#b2985f]' : 'bg-[rgba(26,26,26,0.2)]')}
+            >
+              <span className={'inline-block h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ' + (latinPrayers ? 'translate-x-6' : 'translate-x-1')} />
+            </button>
+          </div>
+        </div>
+      ) : null}
+    </>
+  )
 
   function trackEvent(name: string, params: Record<string, string | number>) {
     if (typeof gtag === 'function') {
@@ -822,6 +889,7 @@ export default function App() {
                         }
                         mark={crossMark}
                         onAdvance={isAntesDeFinalizar || isLetanias || isCierreFinal ? undefined : advance}
+                        menuSlot={prayerMenuSlot}
                       >
                       {isAntesDeFinalizar ? (
                         <>
@@ -1122,98 +1190,8 @@ export default function App() {
                         : step.id === 'intenciones-del-papa' && idioma === 'en' ? "Pope's Intentions"
                         : step.sequence.title}
                       onAdvance={advance}
+                      menuSlot={prayerMenuSlot}
                     >
-                      {isMisterio ? (
-                        <>
-                          <button
-                            type="button"
-                            onClick={(e) => { e.stopPropagation(); setMysteryMenuOpen(v => !v) }}
-                            className="absolute right-3 top-3 z-10 p-2 text-[var(--rv-ink-muted)] hover:text-[var(--rv-ink)]"
-                            aria-label="Opciones"
-                          >
-                            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                              <circle cx="10" cy="4" r="1.5" />
-                              <circle cx="10" cy="10" r="1.5" />
-                              <circle cx="10" cy="16" r="1.5" />
-                            </svg>
-                          </button>
-                          {mysteryMenuOpen ? (
-                            <div
-                              className="absolute right-3 top-12 z-20 w-64 rounded-xl border border-[var(--rv-border)] bg-white shadow-lg"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <div className="flex items-center justify-between px-4 py-3">
-                                <span className="text-[18px]">{idioma === 'en' ? 'Meditations' : 'Meditaciones'}</span>
-                                <button
-                                  type="button"
-                                  role="switch"
-                                  aria-checked={showMeditaciones}
-                                  onClick={(e) => { e.stopPropagation(); setShowMeditaciones(v => !v) }}
-                                  className={
-                                    'relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ' +
-                                    (showMeditaciones ? 'bg-[#b2985f]' : 'bg-[rgba(26,26,26,0.2)]')
-                                  }
-                                >
-                                  <span
-                                    className={
-                                      'inline-block h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ' +
-                                      (showMeditaciones ? 'translate-x-6' : 'translate-x-1')
-                                    }
-                                  />
-                                </button>
-                              </div>
-                              <div className="border-t border-[var(--rv-border)]" />
-                              <div className="flex items-center justify-between px-4 py-3">
-                                <span className="text-[18px]">{idioma === 'en' ? 'Language' : 'Idioma'}</span>
-                                <div className="flex gap-2">
-                                  <button
-                                    type="button"
-                                    onClick={(e) => { e.stopPropagation(); setIdioma('es') }}
-                                    className={
-                                      'rounded-md px-2 py-1 text-2xl ' +
-                                      (idioma === 'es' ? 'ring-2 ring-[#b2985f] bg-[rgba(178,152,95,0.10)]' : '')
-                                    }
-                                    aria-label="Español"
-                                  >
-                                    🇪🇸
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={(e) => { e.stopPropagation(); setIdioma('en') }}
-                                    className={
-                                      'rounded-md px-2 py-1 text-2xl ' +
-                                      (idioma === 'en' ? 'ring-2 ring-[#b2985f] bg-[rgba(178,152,95,0.10)]' : '')
-                                    }
-                                    aria-label="English"
-                                  >
-                                    🇬🇧
-                                  </button>
-                                </div>
-                              </div>
-                              <div className="flex items-center justify-between px-4 py-3">
-                                <span className="text-[18px]">{idioma === 'en' ? 'Latin prayers' : 'Oraciones en latín'}</span>
-                                <button
-                                  type="button"
-                                  role="switch"
-                                  aria-checked={latinPrayers}
-                                  onClick={(e) => { e.stopPropagation(); setLatinPrayers(v => !v) }}
-                                  className={
-                                    'relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ' +
-                                    (latinPrayers ? 'bg-[#b2985f]' : 'bg-[rgba(26,26,26,0.2)]')
-                                  }
-                                >
-                                  <span
-                                    className={
-                                      'inline-block h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ' +
-                                      (latinPrayers ? 'translate-x-6' : 'translate-x-1')
-                                    }
-                                  />
-                                </button>
-                              </div>
-                            </div>
-                          ) : null}
-                        </>
-                      ) : null}
                       {mysteryHeader ? (
                         <div className="text-center">
                           <div className="text-xl font-medium tracking-wide text-[#b2985f]">
@@ -1383,6 +1361,7 @@ export default function App() {
                   <PrayerCard
                     title={idioma === 'en' ? 'Chaplet of Divine Mercy' : 'Coronilla de la Divina Misericordia'}
                     onAdvance={advance}
+                    menuSlot={prayerMenuSlot}
                   >
                     <img
                       src={divinaMisericordiaJpg}
@@ -1409,6 +1388,7 @@ export default function App() {
                         title={latinPrayers ? 'Credo' : idioma === 'en' ? "Apostles' Creed" : 'Credo'}
                         mark={<CrossIcon glow size="large" />}
                         onAdvance={advance}
+                        menuSlot={prayerMenuSlot}
                       >
                         {(latinPrayers ? CREDO_LATIN_PARAGRAPHS : idioma === 'en' ? APOSTLES_CREED_EN_PARAGRAPHS : credoStep?.paragraphs ?? []).map((p) => (
                           <p key={p} className="whitespace-pre-line text-[20px]">
@@ -1423,6 +1403,7 @@ export default function App() {
                     title={idioma === 'en' ? 'Hail Mary' : 'Ave María'}
                     mark={<CrossIcon glow size="large" />}
                     onAdvance={advance}
+                    menuSlot={prayerMenuSlot}
                   >
                     <p className="text-[20px]">
                       {(latinPrayers ? AVE_MARIA_LATIN_TEXT : idioma === 'en' ? HAIL_MARY_EN_TEXT : AVE_MARIA_TEXT).replace(/ A[m]e[n]\.$/i, '')}
@@ -1434,6 +1415,7 @@ export default function App() {
                     title={latinPrayers ? 'Glória Patri' : idioma === 'en' ? 'Glory Be' : 'Gloria'}
                     mark={<CrossIcon glow size="large" />}
                     onAdvance={advance}
+                    menuSlot={prayerMenuSlot}
                   >
                     <p className="whitespace-pre-line text-[20px]">
                       {latinPrayers
@@ -1445,7 +1427,7 @@ export default function App() {
                     <p className="text-right text-[20px]">{latinPrayers || idioma === 'en' ? 'Amen.' : 'Amén.'}</p>
                   </PrayerCard>
                 ) : screen.stepIndex >= 59 && screen.stepIndex <= 61 ? (
-                  <PrayerCard onAdvance={advance}>
+                  <PrayerCard onAdvance={advance} menuSlot={prayerMenuSlot}>
                     <img
                       src={divinaMisericordiaJpg}
                       alt="Divina Misericordia"
@@ -1462,7 +1444,7 @@ export default function App() {
                     </p>
                   </PrayerCard>
                 ) : screen.stepIndex === 62 ? (
-                  <PrayerCard onAdvance={advance}>
+                  <PrayerCard onAdvance={advance} menuSlot={prayerMenuSlot}>
                     <img
                       src={divinaMisericordiaJpg}
                       alt="Divina Misericordia"
@@ -1479,6 +1461,7 @@ export default function App() {
                   <PrayerCard
                     mark={<CrossIcon glow size="large" />}
                     onAdvance={advance}
+                    menuSlot={prayerMenuSlot}
                   >
                     <p className="whitespace-pre-line text-[20px]">
                       {idioma === 'en'
@@ -1506,7 +1489,7 @@ export default function App() {
                   ]
                   if (beadInDecade === 0) {
                     return (
-                      <PrayerCard onAdvance={advance}>
+                      <PrayerCard onAdvance={advance} menuSlot={prayerMenuSlot}>
                         <img
                           src={divinaMisericordiaJpg}
                           alt="Divina Misericordia"
@@ -1522,7 +1505,7 @@ export default function App() {
                     )
                   }
                   return (
-                    <PrayerCard onAdvance={advance}>
+                    <PrayerCard onAdvance={advance} menuSlot={prayerMenuSlot}>
                       <img
                         src={decadeImages[decadeIdx]}
                         alt={decadeAlts[decadeIdx]}
@@ -1545,6 +1528,7 @@ export default function App() {
                     <PrayerCard
                       title={letaniaData.title}
                       onAdvance={advance}
+                      menuSlot={prayerMenuSlot}
                     >
                       <div className="space-y-4">
                         {letaniaItem?.response ? (
@@ -1564,6 +1548,7 @@ export default function App() {
                 <PrayerCard
                   title={idioma === 'en' ? 'Hail Holy Queen' : 'La Salve'}
                   onAdvance={restart}
+                  menuSlot={prayerMenuSlot}
                 >
                   <p className="text-center whitespace-pre-line text-[20px]">
                     {idioma === 'en'
