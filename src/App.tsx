@@ -466,9 +466,7 @@ export default function App() {
     return originalText
   }
 
-  const [prayerMenuOpen, setPrayerMenuOpen] = useState(false)
-
-  useEffect(() => { setPrayerMenuOpen(false) }, [screen])
+  const [globalMenuOpen, setGlobalMenuOpen] = useState(false)
 
   useEffect(() => {
     if (
@@ -507,102 +505,6 @@ export default function App() {
     window.addEventListener('popstate', handler)
     return () => window.removeEventListener('popstate', handler)
   }, [])
-
-  function PrayerToggle({ checked, onToggle }: { checked: boolean; onToggle: () => void }) {
-    return (
-      <button
-        type="button"
-        role="switch"
-        aria-checked={checked}
-        onClick={(e) => { e.stopPropagation(); onToggle() }}
-        className={
-          'relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-200 ' +
-          (checked ? 'bg-[#b2985f]' : 'bg-[rgba(26,26,26,0.2)]')
-        }
-      >
-        <span
-          className={
-            'inline-block h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 ' +
-            (checked ? 'translate-x-6' : 'translate-x-1')
-          }
-        />
-      </button>
-    )
-  }
-
-  const prayerMenuSlot = (
-    <>
-      <button
-        type="button"
-        onClick={(e) => { e.stopPropagation(); setPrayerMenuOpen(v => !v) }}
-        className="absolute right-3 top-3 z-10 p-2 text-[var(--rv-ink-muted)] hover:text-[var(--rv-ink)]"
-        aria-label={idioma === 'en' ? 'Options' : 'Opciones'}
-      >
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-          <circle cx="10" cy="4" r="1.5" />
-          <circle cx="10" cy="10" r="1.5" />
-          <circle cx="10" cy="16" r="1.5" />
-        </svg>
-      </button>
-      {prayerMenuOpen ? (
-        <div
-          className="fixed inset-0 z-50 flex flex-col bg-white"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* Header */}
-          <div className="flex items-center justify-between border-b border-[var(--rv-border)] px-5 pb-4 pt-10">
-            <span className="text-xl font-semibold text-[var(--rv-ink)]">
-              {idioma === 'en' ? 'Settings' : 'Configuración'}
-            </span>
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); setPrayerMenuOpen(false) }}
-              className="-mr-2 p-2 text-[var(--rv-ink-muted)]"
-              aria-label={idioma === 'en' ? 'Close' : 'Cerrar'}
-            >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </button>
-          </div>
-
-          {/* Content */}
-          <div className="flex-1 overflow-y-auto">
-            <div className="px-5 pb-1 pt-5 text-[13px] font-semibold uppercase tracking-[0.08em] text-[var(--rv-ink-muted)]">
-              {idioma === 'en' ? 'Preferences' : 'Preferencias'}
-            </div>
-            <div className="flex items-center justify-between px-5 py-4">
-              <span className="text-[18px]">{idioma === 'en' ? 'Meditations' : 'Meditaciones'}</span>
-              <PrayerToggle checked={showMeditaciones} onToggle={() => setShowMeditaciones(v => !v)} />
-            </div>
-            <div className="mx-5 border-t border-[var(--rv-border)]" />
-            <div className="flex items-center justify-between px-5 py-4">
-              <span className="text-[18px]">{idioma === 'en' ? 'Language' : 'Idioma'}</span>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); setIdioma('es') }}
-                  className={'rounded-md px-2 py-1 text-2xl ' + (idioma === 'es' ? 'ring-2 ring-[#b2985f] bg-[rgba(178,152,95,0.10)]' : '')}
-                  aria-label="Español"
-                >🇪🇸</button>
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); setIdioma('en') }}
-                  className={'rounded-md px-2 py-1 text-2xl ' + (idioma === 'en' ? 'ring-2 ring-[#b2985f] bg-[rgba(178,152,95,0.10)]' : '')}
-                  aria-label="English"
-                >🇬🇧</button>
-              </div>
-            </div>
-            <div className="mx-5 border-t border-[var(--rv-border)]" />
-            <div className="flex items-center justify-between px-5 py-4">
-              <span className="text-[18px]">{idioma === 'en' ? 'Latin prayers' : 'Oraciones en latín'}</span>
-              <PrayerToggle checked={latinPrayers} onToggle={() => setLatinPrayers(v => !v)} />
-            </div>
-          </div>
-        </div>
-      ) : null}
-    </>
-  )
 
   function trackEvent(name: string, params: Record<string, string | number>) {
     if (typeof gtag === 'function') {
@@ -918,7 +820,7 @@ export default function App() {
                         }
                         mark={crossMark}
                         onAdvance={isAntesDeFinalizar || isLetanias || isCierreFinal ? undefined : advance}
-                        menuSlot={prayerMenuSlot}
+                        
                       >
                       {isAntesDeFinalizar ? (
                         <>
@@ -1219,7 +1121,7 @@ export default function App() {
                         : step.id === 'intenciones-del-papa' && idioma === 'en' ? "Pope's Intentions"
                         : step.sequence.title}
                       onAdvance={advance}
-                      menuSlot={prayerMenuSlot}
+                      
                     >
                       {mysteryHeader ? (
                         <div className="text-center">
@@ -1390,7 +1292,7 @@ export default function App() {
                   <PrayerCard
                     title={idioma === 'en' ? 'Chaplet of Divine Mercy' : 'Coronilla de la Divina Misericordia'}
                     onAdvance={advance}
-                    menuSlot={prayerMenuSlot}
+                    
                   >
                     <img
                       src={divinaMisericordiaJpg}
@@ -1417,7 +1319,7 @@ export default function App() {
                         title={latinPrayers ? 'Credo' : idioma === 'en' ? "Apostles' Creed" : 'Credo'}
                         mark={<CrossIcon glow size="large" />}
                         onAdvance={advance}
-                        menuSlot={prayerMenuSlot}
+                        
                       >
                         {(latinPrayers ? CREDO_LATIN_PARAGRAPHS : idioma === 'en' ? APOSTLES_CREED_EN_PARAGRAPHS : credoStep?.paragraphs ?? []).map((p) => (
                           <p key={p} className="whitespace-pre-line text-[20px]">
@@ -1432,7 +1334,7 @@ export default function App() {
                     title={idioma === 'en' ? 'Hail Mary' : 'Ave María'}
                     mark={<CrossIcon glow size="large" />}
                     onAdvance={advance}
-                    menuSlot={prayerMenuSlot}
+                    
                   >
                     <p className="text-[20px]">
                       {(latinPrayers ? AVE_MARIA_LATIN_TEXT : idioma === 'en' ? HAIL_MARY_EN_TEXT : AVE_MARIA_TEXT).replace(/ A[m]e[n]\.$/i, '')}
@@ -1444,7 +1346,7 @@ export default function App() {
                     title={latinPrayers ? 'Glória Patri' : idioma === 'en' ? 'Glory Be' : 'Gloria'}
                     mark={<CrossIcon glow size="large" />}
                     onAdvance={advance}
-                    menuSlot={prayerMenuSlot}
+                    
                   >
                     <p className="whitespace-pre-line text-[20px]">
                       {latinPrayers
@@ -1456,7 +1358,7 @@ export default function App() {
                     <p className="text-right text-[20px]">{latinPrayers || idioma === 'en' ? 'Amen.' : 'Amén.'}</p>
                   </PrayerCard>
                 ) : screen.stepIndex >= 59 && screen.stepIndex <= 61 ? (
-                  <PrayerCard onAdvance={advance} menuSlot={prayerMenuSlot}>
+                  <PrayerCard onAdvance={advance} >
                     <img
                       src={divinaMisericordiaJpg}
                       alt="Divina Misericordia"
@@ -1473,7 +1375,7 @@ export default function App() {
                     </p>
                   </PrayerCard>
                 ) : screen.stepIndex === 62 ? (
-                  <PrayerCard onAdvance={advance} menuSlot={prayerMenuSlot}>
+                  <PrayerCard onAdvance={advance} >
                     <img
                       src={divinaMisericordiaJpg}
                       alt="Divina Misericordia"
@@ -1490,7 +1392,7 @@ export default function App() {
                   <PrayerCard
                     mark={<CrossIcon glow size="large" />}
                     onAdvance={advance}
-                    menuSlot={prayerMenuSlot}
+                    
                   >
                     <p className="whitespace-pre-line text-[20px]">
                       {idioma === 'en'
@@ -1518,7 +1420,7 @@ export default function App() {
                   ]
                   if (beadInDecade === 0) {
                     return (
-                      <PrayerCard onAdvance={advance} menuSlot={prayerMenuSlot}>
+                      <PrayerCard onAdvance={advance} >
                         <img
                           src={divinaMisericordiaJpg}
                           alt="Divina Misericordia"
@@ -1534,7 +1436,7 @@ export default function App() {
                     )
                   }
                   return (
-                    <PrayerCard onAdvance={advance} menuSlot={prayerMenuSlot}>
+                    <PrayerCard onAdvance={advance} >
                       <img
                         src={decadeImages[decadeIdx]}
                         alt={decadeAlts[decadeIdx]}
@@ -1557,7 +1459,7 @@ export default function App() {
                     <PrayerCard
                       title={letaniaData.title}
                       onAdvance={advance}
-                      menuSlot={prayerMenuSlot}
+                      
                     >
                       <div className="space-y-4">
                         {letaniaItem?.response ? (
@@ -1577,7 +1479,7 @@ export default function App() {
                 <PrayerCard
                   title={idioma === 'en' ? 'Hail Holy Queen' : 'La Salve'}
                   onAdvance={restart}
-                  menuSlot={prayerMenuSlot}
+                  
                 >
                   <p className="text-center whitespace-pre-line text-[20px]">
                     {idioma === 'en'
@@ -1589,6 +1491,142 @@ export default function App() {
             </>
           ) : null}
       </motion.div>
+
+      {/* Global hamburger button — visible on every screen */}
+      <button
+        type="button"
+        onClick={() => setGlobalMenuOpen(true)}
+        className="fixed right-4 top-4 z-40 p-2 text-[var(--rv-ink-muted)] hover:text-[var(--rv-ink)]"
+        aria-label={idioma === 'en' ? 'Menu' : 'Menú'}
+      >
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+        </svg>
+      </button>
+
+      {/* Global full-viewport drawer */}
+      {globalMenuOpen ? (
+        <div className="fixed inset-0 z-50 flex flex-col bg-white">
+          {/* Header */}
+          <div className="flex items-center justify-between border-b border-[var(--rv-border)] px-5 pb-4 pt-10">
+            <span className="text-xl font-semibold text-[var(--rv-ink)]">
+              {idioma === 'en' ? 'Menu' : 'Menú'}
+            </span>
+            <button
+              type="button"
+              onClick={() => setGlobalMenuOpen(false)}
+              className="-mr-2 p-2 text-[var(--rv-ink-muted)]"
+              aria-label={idioma === 'en' ? 'Close' : 'Cerrar'}
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+          </div>
+
+          {/* Scrollable content */}
+          <div className="flex-1 overflow-y-auto">
+            {/* Mysteries */}
+            <div className="px-5 pb-1 pt-5 text-[13px] font-semibold uppercase tracking-[0.08em] text-[var(--rv-ink-muted)]">
+              {idioma === 'en' ? 'Mysteries' : 'Misterios'}
+            </div>
+            {([
+              { id: 'gozosos', es: 'Misterios Gozosos', en: 'Joyful Mysteries' },
+              { id: 'dolorosos', es: 'Misterios Dolorosos', en: 'Sorrowful Mysteries' },
+              { id: 'gloriosos', es: 'Misterios Gloriosos', en: 'Glorious Mysteries' },
+              { id: 'luminosos', es: 'Misterios Luminosos', en: 'Luminous Mysteries' },
+            ] as const).map(m => (
+              <button
+                key={m.id}
+                type="button"
+                className="w-full px-5 py-4 text-left text-[18px] hover:bg-[rgba(178,152,95,0.08)] active:bg-[rgba(178,152,95,0.15)]"
+                onClick={() => {
+                  setMystery(MYSTERIES[m.id])
+                  setIsManuallySelected(true)
+                  if (screen.kind !== 'splash') navigate({ kind: 'splash' })
+                  setGlobalMenuOpen(false)
+                }}
+              >
+                {idioma === 'en' ? m.en : m.es}
+              </button>
+            ))}
+
+            <div className="mx-5 my-3 border-t border-[var(--rv-border)]" />
+
+            {/* Standalone prayers */}
+            <div className="px-5 pb-1 text-[13px] font-semibold uppercase tracking-[0.08em] text-[var(--rv-ink-muted)]">
+              {idioma === 'en' ? 'Prayers' : 'Oraciones'}
+            </div>
+            {([
+              { id: 'divina-misericordia', es: 'Coronilla de la Divina Misericordia', en: 'Chaplet of Divine Mercy' },
+              { id: 'letanias', es: 'Letanías a la Virgen', en: 'Litany of the Virgin' },
+              { id: 'salve', es: 'Salve', en: 'Hail Holy Queen' },
+            ] as const).map(p => (
+              <button
+                key={p.id}
+                type="button"
+                className="w-full px-5 py-4 text-left text-[18px] hover:bg-[rgba(178,152,95,0.08)] active:bg-[rgba(178,152,95,0.15)]"
+                onClick={() => {
+                  navigate({ kind: 'standalone', prayerId: p.id, stepIndex: 0 })
+                  setGlobalMenuOpen(false)
+                }}
+              >
+                {idioma === 'en' ? p.en : p.es}
+              </button>
+            ))}
+
+            <div className="mx-5 my-3 border-t border-[var(--rv-border)]" />
+
+            {/* Settings */}
+            <div className="px-5 pb-1 text-[13px] font-semibold uppercase tracking-[0.08em] text-[var(--rv-ink-muted)]">
+              {idioma === 'en' ? 'Settings' : 'Configuración'}
+            </div>
+            <div className="flex items-center justify-between px-5 py-4">
+              <span className="text-[18px]">{idioma === 'en' ? 'Meditations' : 'Meditaciones'}</span>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={showMeditaciones}
+                onClick={() => setShowMeditaciones(v => !v)}
+                className={'relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-200 ' + (showMeditaciones ? 'bg-[#b2985f]' : 'bg-[rgba(26,26,26,0.2)]')}
+              >
+                <span className={'inline-block h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 ' + (showMeditaciones ? 'translate-x-6' : 'translate-x-1')} />
+              </button>
+            </div>
+            <div className="mx-5 border-t border-[var(--rv-border)]" />
+            <div className="flex items-center justify-between px-5 py-4">
+              <span className="text-[18px]">{idioma === 'en' ? 'Language' : 'Idioma'}</span>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIdioma('es')}
+                  className={'rounded-md px-2 py-1 text-2xl ' + (idioma === 'es' ? 'ring-2 ring-[#b2985f] bg-[rgba(178,152,95,0.10)]' : '')}
+                  aria-label="Español"
+                >🇪🇸</button>
+                <button
+                  type="button"
+                  onClick={() => setIdioma('en')}
+                  className={'rounded-md px-2 py-1 text-2xl ' + (idioma === 'en' ? 'ring-2 ring-[#b2985f] bg-[rgba(178,152,95,0.10)]' : '')}
+                  aria-label="English"
+                >🇬🇧</button>
+              </div>
+            </div>
+            <div className="mx-5 border-t border-[var(--rv-border)]" />
+            <div className="flex items-center justify-between px-5 py-4">
+              <span className="text-[18px]">{idioma === 'en' ? 'Latin prayers' : 'Oraciones en latín'}</span>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={latinPrayers}
+                onClick={() => setLatinPrayers(v => !v)}
+                className={'relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-200 ' + (latinPrayers ? 'bg-[#b2985f]' : 'bg-[rgba(26,26,26,0.2)]')}
+              >
+                <span className={'inline-block h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 ' + (latinPrayers ? 'translate-x-6' : 'translate-x-1')} />
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <div className="fixed bottom-0 left-0 right-0">
         <div className="w-full rounded-t-3xl border-t border-[rgba(26,26,26,0.10)] bg-white/90 shadow-2xl backdrop-blur">
