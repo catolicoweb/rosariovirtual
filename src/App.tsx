@@ -39,8 +39,15 @@ import divinaMisericordiaCruzCuestasJpg from './assets/divinamicericordia-cruzcu
 import divinaMisericordiaCruzJpg from './assets/divinamicericordia-cruz.jpg'
 import { getMysteryOfDay, MYSTERIES, type MysteryId } from './data/mystery'
 import { steps } from './data/prayerSteps'
-import { AVE_MARIA_TEXT, AVE_MARIA_LATIN_TEXT, PATER_NOSTER_TEXT, GLORIA_LATIN_TEXT, SIGNUM_CRUCIS_PARAGRAPHS, CREDO_LATIN_PARAGRAPHS } from './data/intencionesDelPapa'
+import { AVE_MARIA_TEXT, AVE_MARIA_LATIN_TEXT, PATER_NOSTER_TEXT, GLORIA_LATIN_TEXT, SIGNUM_CRUCIS_PARAGRAPHS, CREDO_LATIN_PARAGRAPHS, OUR_FATHER_EN_TEXT, HAIL_MARY_EN_TEXT, GLORY_BE_EN_TEXT, SIGN_OF_CROSS_EN_PARAGRAPHS, APOSTLES_CREED_EN_PARAGRAPHS } from './data/intencionesDelPapa'
 import { letaniasVirgen } from './data/letaniasVirgen'
+import { letaniasVirgenEn } from './data/letaniasVirgenEn'
+import {
+  GLORIOUS_1_EN_MEDITACIONES, GLORIOUS_2_EN_MEDITACIONES, GLORIOUS_3_EN_MEDITACIONES, GLORIOUS_4_EN_MEDITACIONES, GLORIOUS_5_EN_MEDITACIONES,
+  SORROWFUL_1_EN_MEDITACIONES, SORROWFUL_2_EN_MEDITACIONES, SORROWFUL_3_EN_MEDITACIONES, SORROWFUL_4_EN_MEDITACIONES, SORROWFUL_5_EN_MEDITACIONES,
+  JOYFUL_1_EN_MEDITACIONES, JOYFUL_2_EN_MEDITACIONES, JOYFUL_3_EN_MEDITACIONES, JOYFUL_4_EN_MEDITACIONES, JOYFUL_5_EN_MEDITACIONES,
+  LUMINOUS_1_EN_MEDITACIONES, LUMINOUS_2_EN_MEDITACIONES, LUMINOUS_3_EN_MEDITACIONES, LUMINOUS_4_EN_MEDITACIONES, LUMINOUS_5_EN_MEDITACIONES,
+} from './data/meditacionesEn'
 
 const PRIMER_MISTERIO_MEDITACIONES = [
   '“En verdad os digo, quedaréis tristes, pero vuestra tristeza se volverá en gozo.”',
@@ -400,11 +407,12 @@ export default function App() {
     }
   }, [showMeditaciones])
 
-  const [idioma, setIdioma] = useState<'es' | 'la'>(() => {
+  const [idioma, setIdioma] = useState<'es' | 'la' | 'en'>(() => {
     if (typeof window === 'undefined') return 'es'
     try {
       const raw = window.localStorage.getItem('rv_idioma')
       if (raw === 'la') return 'la'
+      if (raw === 'en') return 'en'
       return 'es'
     } catch {
       return 'es'
@@ -421,10 +429,18 @@ export default function App() {
 
   function prayerText(itemId: string | undefined, originalText: string | undefined): string {
     if (!itemId || !originalText) return originalText ?? ''
-    if (idioma !== 'la') return originalText
-    if (itemId === 'padre-nuestro') return PATER_NOSTER_TEXT
-    if (itemId.startsWith('avemaria-')) return AVE_MARIA_LATIN_TEXT
-    if (itemId === 'gloria') return GLORIA_LATIN_TEXT
+    if (idioma === 'la') {
+      if (itemId === 'padre-nuestro') return PATER_NOSTER_TEXT
+      if (itemId.startsWith('avemaria-')) return AVE_MARIA_LATIN_TEXT
+      if (itemId === 'gloria') return GLORIA_LATIN_TEXT
+      return originalText
+    }
+    if (idioma === 'en') {
+      if (itemId === 'padre-nuestro') return OUR_FATHER_EN_TEXT
+      if (itemId.startsWith('avemaria-')) return HAIL_MARY_EN_TEXT
+      if (itemId === 'gloria') return GLORY_BE_EN_TEXT
+      return originalText
+    }
     return originalText
   }
 
@@ -679,16 +695,20 @@ export default function App() {
   }
 
   const bottomAction = (() => {
-    if (screen.kind === 'splash') return { label: 'Iniciar', onClick: advance }
-    if (screen.kind === 'done') return { label: 'Volver al inicio', onClick: restart }
+    const labelStart = idioma === 'en' ? 'Begin' : 'Iniciar'
+    const labelBack = idioma === 'en' ? 'Back to start' : 'Volver al inicio'
+    const labelFinish = idioma === 'en' ? 'Finish' : 'Finalizar'
+    const labelNext = idioma === 'en' ? 'Next' : 'Siguiente'
+    if (screen.kind === 'splash') return { label: labelStart, onClick: advance }
+    if (screen.kind === 'done') return { label: labelBack, onClick: restart }
     if (
       screen.kind === 'standalone' &&
       screen.prayerId === 'divina-misericordia' &&
       screen.stepIndex === 63
     ) {
-      return { label: 'Finalizar', onClick: advance }
+      return { label: labelFinish, onClick: advance }
     }
-    return { label: 'Siguiente', onClick: advance }
+    return { label: labelNext, onClick: advance }
   })()
 
   return (
@@ -706,8 +726,18 @@ export default function App() {
       >
           {screen.kind === 'splash' ? (
             <Splash
-              mysteryLabel={mystery.label}
-              mysteryDays={mystery.days}
+              mysteryLabel={idioma === 'en' ? {
+                gozosos: 'Joyful Mysteries',
+                dolorosos: 'Sorrowful Mysteries',
+                gloriosos: 'Glorious Mysteries',
+                luminosos: 'Luminous Mysteries',
+              }[mystery.id] : mystery.label}
+              mysteryDays={idioma === 'en' ? {
+                gozosos: 'Mondays and Saturdays',
+                dolorosos: 'Tuesdays and Fridays',
+                gloriosos: 'Wednesdays and Sundays',
+                luminosos: 'Thursdays',
+              }[mystery.id] : mystery.days}
               coverImg={{
                 gloriosos: misteriosGloriososJpg,
                 dolorosos: misteriosDolorososJpg,
@@ -726,7 +756,7 @@ export default function App() {
               showMeditaciones={showMeditaciones}
               onToggleMeditaciones={() => setShowMeditaciones(v => !v)}
               idioma={idioma}
-              onSetIdioma={setIdioma}
+              onSetIdioma={(id) => setIdioma(id as 'es' | 'la' | 'en')}
             />
           ) : null}
 
@@ -760,7 +790,11 @@ export default function App() {
                   return (
                     <>
                       <PrayerCard
-                        title={idioma === 'la' && step.id === 'credo' ? 'Credo' : step.title}
+                        title={
+                          step.id === 'credo' && idioma === 'en' ? "Apostles' Creed"
+                          : step.id === 'la-salve' && idioma === 'en' ? 'Hail Holy Queen'
+                          : step.title
+                        }
                         mark={crossMark}
                         onAdvance={isAntesDeFinalizar || isLetanias || isCierreFinal ? undefined : advance}
                       >
@@ -775,7 +809,7 @@ export default function App() {
                             }}
                           >
                             <span className="text-[0.98rem] text-[rgba(26,26,26,0.78)]">
-                              Letanias a Virgen Maria
+                              {idioma === 'en' ? 'Litany of the Virgin Mary' : 'Letanias a Virgen Maria'}
                             </span>
                             <span className="text-[rgba(26,26,26,0.38)]" aria-hidden="true">
                               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -799,7 +833,7 @@ export default function App() {
                             }}
                           >
                             <span className="text-[0.98rem] text-[rgba(26,26,26,0.78)]">
-                              Saltear y Finalizar
+                              {idioma === 'en' ? 'Skip and Finish' : 'Saltear y Finalizar'}
                             </span>
                             <span className="text-[rgba(26,26,26,0.38)]" aria-hidden="true">
                               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -816,7 +850,9 @@ export default function App() {
                         </>
                       ) : (
                         (idioma === 'la' && step.id === 'inicio' ? SIGNUM_CRUCIS_PARAGRAPHS
+                          : idioma === 'en' && step.id === 'inicio' ? SIGN_OF_CROSS_EN_PARAGRAPHS
                           : idioma === 'la' && step.id === 'credo' ? CREDO_LATIN_PARAGRAPHS
+                          : idioma === 'en' && step.id === 'credo' ? APOSTLES_CREED_EN_PARAGRAPHS
                           : step.paragraphs
                         ).map((p: string) => (
                           <p
@@ -848,7 +884,7 @@ export default function App() {
                     return `${screen.sequenceIndex + 1}/${step.sequence.items.length}`
                   }
                   if (step.id.includes('misterio')) {
-                    if (item?.id === 'padre-nuestro') return step.sequence.intro
+                    if (item?.id === 'padre-nuestro') return idioma === 'en' ? 'Jesus says: pray thus...' : step.sequence.intro
                     return null
                   }
                   return step.sequence.intro
@@ -869,7 +905,7 @@ export default function App() {
 
                 const mysteryHeader = (() => {
                   if (!isMisterio) return null
-                  const titles = {
+                  const titlesEs = {
                     gloriosos: {
                       1: 'Resurrección de Jesús',
                       2: 'Ascensión del Señor',
@@ -899,6 +935,37 @@ export default function App() {
                       5: 'La Institución de la Eucaristía',
                     },
                   }
+                  const titlesEn = {
+                    gloriosos: {
+                      1: 'The Resurrection of Jesus',
+                      2: 'The Ascension of the Lord',
+                      3: 'Pentecost',
+                      4: 'The Assumption of Mary into Heaven',
+                      5: 'The Coronation of Mary in Heaven',
+                    },
+                    dolorosos: {
+                      1: 'The Agony in the Garden',
+                      2: 'The Scourging at the Pillar',
+                      3: 'The Crowning with Thorns',
+                      4: 'Jesus Carries His Cross',
+                      5: 'The Crucifixion and Death of the Lord',
+                    },
+                    gozosos: {
+                      1: 'The Annunciation of the Angel to Mary',
+                      2: 'The Visitation of Mary to her Cousin Elizabeth',
+                      3: 'The Birth of the Son of God',
+                      4: 'The Presentation of Jesus in the Temple',
+                      5: 'The Finding of Jesus in the Temple',
+                    },
+                    luminosos: {
+                      1: 'The Baptism of Jesus in the Jordan',
+                      2: 'The Wedding at Cana',
+                      3: 'The Proclamation of the Kingdom of God',
+                      4: 'The Transfiguration of the Lord',
+                      5: 'The Institution of the Eucharist',
+                    },
+                  }
+                  const titles = idioma === 'en' ? titlesEn : titlesEs
                   const images: Record<string, Record<number, string>> = {
                     gloriosos: {
                       1: resurreccionJpg,
@@ -935,7 +1002,9 @@ export default function App() {
                     : step.id === 'cuarto-misterio' ? 4
                     : step.id === 'quinto-misterio' ? 5 : 0
                   if (mysteryNum === 0) return null
-                  const labels = ['', 'Primer Misterio', 'Segundo Misterio', 'Tercer Misterio', 'Cuarto Misterio', 'Quinto Misterio']
+                  const labelsEs = ['', 'Primer Misterio', 'Segundo Misterio', 'Tercer Misterio', 'Cuarto Misterio', 'Quinto Misterio']
+                  const labelsEn = ['', 'First Mystery', 'Second Mystery', 'Third Mystery', 'Fourth Mystery', 'Fifth Mystery']
+                  const labels = idioma === 'en' ? labelsEn : labelsEs
                   return {
                     label: labels[mysteryNum],
                     title: titles[mystery.id]?.[mysteryNum as 1|2|3|4|5] ?? '',
@@ -949,7 +1018,7 @@ export default function App() {
                   const match = item?.id?.match(/avemaria-(\d+)/)
                   const idx = match?.[1] ? Number(match[1]) : NaN
                   if (!Number.isFinite(idx) || idx < 1) return null
-                  const meditaciones: Record<string, Record<number, string[]>> = {
+                  const meditacionesEs: Record<string, Record<number, string[]>> = {
                     gloriosos: {
                       1: PRIMER_MISTERIO_MEDITACIONES,
                       2: SEGUNDO_MISTERIO_MEDITACIONES,
@@ -979,6 +1048,37 @@ export default function App() {
                       5: LUMINOSO_5_MEDITACIONES,
                     },
                   }
+                  const meditacionesEn: Record<string, Record<number, string[]>> = {
+                    gloriosos: {
+                      1: GLORIOUS_1_EN_MEDITACIONES,
+                      2: GLORIOUS_2_EN_MEDITACIONES,
+                      3: GLORIOUS_3_EN_MEDITACIONES,
+                      4: GLORIOUS_4_EN_MEDITACIONES,
+                      5: GLORIOUS_5_EN_MEDITACIONES,
+                    },
+                    dolorosos: {
+                      1: SORROWFUL_1_EN_MEDITACIONES,
+                      2: SORROWFUL_2_EN_MEDITACIONES,
+                      3: SORROWFUL_3_EN_MEDITACIONES,
+                      4: SORROWFUL_4_EN_MEDITACIONES,
+                      5: SORROWFUL_5_EN_MEDITACIONES,
+                    },
+                    gozosos: {
+                      1: JOYFUL_1_EN_MEDITACIONES,
+                      2: JOYFUL_2_EN_MEDITACIONES,
+                      3: JOYFUL_3_EN_MEDITACIONES,
+                      4: JOYFUL_4_EN_MEDITACIONES,
+                      5: JOYFUL_5_EN_MEDITACIONES,
+                    },
+                    luminosos: {
+                      1: LUMINOUS_1_EN_MEDITACIONES,
+                      2: LUMINOUS_2_EN_MEDITACIONES,
+                      3: LUMINOUS_3_EN_MEDITACIONES,
+                      4: LUMINOUS_4_EN_MEDITACIONES,
+                      5: LUMINOUS_5_EN_MEDITACIONES,
+                    },
+                  }
+                  const meditaciones = idioma === 'en' ? meditacionesEn : meditacionesEs
                   const mysteryNum = step.id === 'primer-misterio' ? 1
                     : step.id === 'segundo-misterio' ? 2
                     : step.id === 'tercer-misterio' ? 3
@@ -992,7 +1092,10 @@ export default function App() {
                 return (
                   <>
                     <PrayerCard
-                      title={isMisterio ? undefined : step.sequence.title}
+                      title={isMisterio ? undefined
+                        : step.id === 'letanias' && idioma === 'en' ? letaniasVirgenEn.title
+                        : step.id === 'intenciones-del-papa' && idioma === 'en' ? "Pope's Intentions"
+                        : step.sequence.title}
                       onAdvance={advance}
                     >
                       {isMisterio ? (
@@ -1015,7 +1118,7 @@ export default function App() {
                               onClick={(e) => e.stopPropagation()}
                             >
                               <div className="flex items-center justify-between px-4 py-3">
-                                <span className="text-[18px]">Meditaciones</span>
+                                <span className="text-[18px]">{idioma === 'en' ? 'Meditations' : 'Meditaciones'}</span>
                                 <button
                                   type="button"
                                   role="switch"
@@ -1036,7 +1139,7 @@ export default function App() {
                               </div>
                               <div className="border-t border-[var(--rv-border)]" />
                               <div className="flex items-center justify-between px-4 py-3">
-                                <span className="text-[18px]">Idioma</span>
+                                <span className="text-[18px]">{idioma === 'en' ? 'Language' : 'Idioma'}</span>
                                 <div className="flex gap-2">
                                   <button
                                     type="button"
@@ -1048,6 +1151,17 @@ export default function App() {
                                     aria-label="Español"
                                   >
                                     🇪🇸
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => { e.stopPropagation(); setIdioma('en') }}
+                                    className={
+                                      'rounded-md px-2 py-1 text-2xl transition-opacity ' +
+                                      (idioma === 'en' ? 'ring-2 ring-[#b2985f] opacity-100' : 'opacity-40')
+                                    }
+                                    aria-label="English"
+                                  >
+                                    🇬🇧
                                   </button>
                                   <button
                                     type="button"
@@ -1122,7 +1236,7 @@ export default function App() {
                             }}
                           >
                             <div className="flex w-full items-center justify-between text-left cursor-pointer">
-                              <span className="text-[20px] font-bold text-[rgba(26,26,26,0.78)]">Avemaría</span>
+                              <span className="text-[20px] font-bold text-[rgba(26,26,26,0.78)]">{idioma === 'en' ? 'Hail Mary' : 'Avemaría'}</span>
                               <span
                                 className={
                                   'text-[rgba(26,26,26,0.38)] transition-transform duration-200 ' +
@@ -1145,8 +1259,8 @@ export default function App() {
                               <>
                                 <div className="my-3 border-t border-[rgba(178,152,95,0.2)]" />
                                 <div className="text-[20px]">
-                                  <p>{(idioma === 'la' ? AVE_MARIA_LATIN_TEXT : AVE_MARIA_TEXT).replace(/ Amén?\.$/, '')}</p>
-                                  <p className="text-right mt-1">{idioma === 'la' ? 'Amen.' : 'Amén.'}</p>
+                                  <p>{(idioma === 'la' ? AVE_MARIA_LATIN_TEXT : idioma === 'en' ? HAIL_MARY_EN_TEXT : AVE_MARIA_TEXT).replace(/ A[m]e[n]\.$/i, '')}</p>
+                                  <p className="text-right mt-1">{idioma === 'la' ? 'Amen.' : idioma === 'en' ? 'Amen.' : 'Amén.'}</p>
                                 </div>
                               </>
                             ) : null}
@@ -1162,7 +1276,7 @@ export default function App() {
                             }}
                           >
                             <div className="flex w-full items-center justify-between text-left cursor-pointer">
-                              <span className="text-[20px] font-bold text-[rgba(26,26,26,0.78)]">Padre Nuestro</span>
+                              <span className="text-[20px] font-bold text-[rgba(26,26,26,0.78)]">{idioma === 'en' ? 'Our Father' : 'Padre Nuestro'}</span>
                               <span
                                 className={
                                   'text-[rgba(26,26,26,0.38)] transition-transform duration-200 ' +
@@ -1191,10 +1305,20 @@ export default function App() {
                         </>
                       ) : isLetanias ? (
                         <div className="space-y-4">
-                          {item?.response ? (
-                            <p className="text-left text-[20px] text-[var(--rv-rubric)]">Responder a cada línea:<br/><span className="font-bold">"{item.response}"</span></p>
-                          ) : null}
-                          <p className="text-left whitespace-pre-line text-[20px] text-[var(--rv-ink)]">{item?.text}</p>
+                          {(() => {
+                            const letaniaItem = idioma === 'en' ? letaniasVirgenEn.items[screen.sequenceIndex] : item
+                            return (
+                              <>
+                                {letaniaItem?.response ? (
+                                  <p className="text-left text-[20px] text-[var(--rv-rubric)]">
+                                    {idioma === 'en' ? 'Respond to each line:' : 'Responder a cada línea:'}<br/>
+                                    <span className="font-bold">"{letaniaItem.response}"</span>
+                                  </p>
+                                ) : null}
+                                <p className="text-left whitespace-pre-line text-[20px] text-[var(--rv-ink)]">{letaniaItem?.text}</p>
+                              </>
+                            )
+                          })()}
                         </div>
                       ) : (
                         <p className="text-center whitespace-pre-line text-[20px]">{prayerText(item?.id, item?.text)}</p>
@@ -1208,9 +1332,11 @@ export default function App() {
 
           {screen.kind === 'done' ? (
             <>
-              <PrayerCard title="Fin">
+              <PrayerCard title={idioma === 'en' ? 'The End' : 'Fin'}>
                 <p className="text-center">
-                  Que el Señor te conceda perseverancia y paz.
+                  {idioma === 'en'
+                    ? 'May the Lord grant you perseverance and peace.'
+                    : 'Que el Señor te conceda perseverancia y paz.'}
                 </p>
               </PrayerCard>
             </>
@@ -1221,18 +1347,20 @@ export default function App() {
               {screen.prayerId === 'divina-misericordia' ? (
                 screen.stepIndex === 0 ? (
                   <PrayerCard
-                    title="Coronilla de la Divina Misericordia"
+                    title={idioma === 'en' ? 'Chaplet of Divine Mercy' : 'Coronilla de la Divina Misericordia'}
                     onAdvance={advance}
                   >
                     <img
                       src={divinaMisericordiaJpg}
-                      alt="Divina Misericordia"
+                      alt={idioma === 'en' ? 'Divine Mercy' : 'Divina Misericordia'}
                       className="w-full rounded-xl border border-[var(--rv-border)] bg-white/40 object-contain"
                       draggable={false}
                     />
                     <p className="whitespace-pre-line text-center text-[20px]">
                       {idioma === 'la'
                         ? SIGNUM_CRUCIS_PARAGRAPHS.join('\n\n')
+                        : idioma === 'en'
+                        ? SIGN_OF_CROSS_EN_PARAGRAPHS.join('\n\n')
                         : 'Por la señal de la Santa Cruz, de nuestros enemigos, líbranos Señor, Dios nuestro.\n\nEn el nombre del Padre, del Hijo y del Espíritu Santo. Amén.'}
                     </p>
                   </PrayerCard>
@@ -1244,11 +1372,11 @@ export default function App() {
                     )
                     return (
                       <PrayerCard
-                        title="Credo"
+                        title={idioma === 'en' ? "Apostles' Creed" : 'Credo'}
                         mark={<CrossIcon glow size="large" />}
                         onAdvance={advance}
                       >
-                        {(idioma === 'la' ? CREDO_LATIN_PARAGRAPHS : credoStep?.paragraphs ?? []).map((p) => (
+                        {(idioma === 'la' ? CREDO_LATIN_PARAGRAPHS : idioma === 'en' ? APOSTLES_CREED_EN_PARAGRAPHS : credoStep?.paragraphs ?? []).map((p) => (
                           <p key={p} className="whitespace-pre-line text-[20px]">
                             {p}
                           </p>
@@ -1258,27 +1386,29 @@ export default function App() {
                   })()
                 ) : screen.stepIndex === 2 ? (
                   <PrayerCard
-                    title={idioma === 'la' ? 'Ave María' : 'Ave María'}
+                    title={idioma === 'en' ? 'Hail Mary' : 'Ave María'}
                     mark={<CrossIcon glow size="large" />}
                     onAdvance={advance}
                   >
                     <p className="text-[20px]">
-                      {(idioma === 'la' ? AVE_MARIA_LATIN_TEXT : AVE_MARIA_TEXT).replace(/ Amén?\.$/, '')}
+                      {(idioma === 'la' ? AVE_MARIA_LATIN_TEXT : idioma === 'en' ? HAIL_MARY_EN_TEXT : AVE_MARIA_TEXT).replace(/ A[m]e[n]\.$/i, '')}
                     </p>
-                    <p className="text-right text-[20px]">{idioma === 'la' ? 'Amen.' : 'Amén.'}</p>
+                    <p className="text-right text-[20px]">{idioma === 'la' || idioma === 'en' ? 'Amen.' : 'Amén.'}</p>
                   </PrayerCard>
                 ) : screen.stepIndex === 3 ? (
                   <PrayerCard
-                    title={idioma === 'la' ? 'Glória Patri' : 'Gloria'}
+                    title={idioma === 'la' ? 'Glória Patri' : idioma === 'en' ? 'Glory Be' : 'Gloria'}
                     mark={<CrossIcon glow size="large" />}
                     onAdvance={advance}
                   >
                     <p className="whitespace-pre-line text-[20px]">
                       {idioma === 'la'
                         ? GLORIA_LATIN_TEXT.replace(/\nAmen$/, '')
+                        : idioma === 'en'
+                        ? GLORY_BE_EN_TEXT.replace(/\nAmen$/, '')
                         : 'Gloria al Padre, y al Hijo, y al Espíritu Santo. Como era en el principio, ahora y siempre, por los siglos de los siglos.'}
                     </p>
-                    <p className="text-right text-[20px]">{idioma === 'la' ? 'Amen.' : 'Amén.'}</p>
+                    <p className="text-right text-[20px]">{idioma === 'la' || idioma === 'en' ? 'Amen.' : 'Amén.'}</p>
                   </PrayerCard>
                 ) : screen.stepIndex >= 59 && screen.stepIndex <= 61 ? (
                   <PrayerCard onAdvance={advance}>
@@ -1292,8 +1422,9 @@ export default function App() {
                       {`${screen.stepIndex - 58}/3`}
                     </p>
                     <p className="whitespace-pre-line text-[20px]">
-                      Santo Dios, Santo Fuerte, Santo Inmortal,{'\n'}
-                      ten misericordia de nosotros y del mundo entero.
+                      {idioma === 'en'
+                        ? `Holy God, Holy Mighty One, Holy Immortal One,\nhave mercy on us and on the whole world.`
+                        : `Santo Dios, Santo Fuerte, Santo Inmortal,\nten misericordia de nosotros y del mundo entero.`}
                     </p>
                   </PrayerCard>
                 ) : screen.stepIndex === 62 ? (
@@ -1305,8 +1436,9 @@ export default function App() {
                       draggable={false}
                     />
                     <p className="whitespace-pre-line text-[20px]">
-                      Oh Sangre y Agua que brotasteis del Corazón de Jesús como una fuente de
-                      misericordia para nosotros, en Vos confío.
+                      {idioma === 'en'
+                        ? 'O Blood and Water, which gushed forth from the Heart of Jesus as a fount of mercy for us, I trust in Thee.'
+                        : 'Oh Sangre y Agua que brotasteis del Corazón de Jesús como una fuente de misericordia para nosotros, en Vos confío.'}
                     </p>
                   </PrayerCard>
                 ) : screen.stepIndex === 63 ? (
@@ -1315,7 +1447,9 @@ export default function App() {
                     onAdvance={advance}
                   >
                     <p className="whitespace-pre-line text-[20px]">
-                      En el nombre del Padre, del Hijo y del Espíritu Santo.
+                      {idioma === 'en'
+                        ? 'In the name of the Father, and of the Son, and of the Holy Spirit.'
+                        : 'En el nombre del Padre, del Hijo y del Espíritu Santo.'}
                     </p>
                   </PrayerCard>
                 ) : (() => {
@@ -1346,9 +1480,9 @@ export default function App() {
                           draggable={false}
                         />
                         <p className="whitespace-pre-line text-[20px]">
-                          Padre Eterno, te ofrezco el Cuerpo y Sangre, el Alma y la Divinidad de
-                          Tu Amadísimo Hijo y Señor Nuestro Jesucristo, en propiciación de
-                          nuestros pecados y los del mundo entero.
+                          {idioma === 'en'
+                            ? 'Eternal Father, I offer Thee the Body and Blood, Soul and Divinity of Thy dearly beloved Son, Our Lord Jesus Christ, in atonement for our sins and those of the whole world.'
+                            : 'Padre Eterno, te ofrezco el Cuerpo y Sangre, el Alma y la Divinidad de Tu Amadísimo Hijo y Señor Nuestro Jesucristo, en propiciación de nuestros pecados y los del mundo entero.'}
                         </p>
                       </PrayerCard>
                     )
@@ -1362,47 +1496,45 @@ export default function App() {
                         draggable={false}
                       />
                       <p className="whitespace-pre-line text-[20px]">
-                        Por Su Dolorosa Pasión, ten misericordia de nosotros y del mundo entero.
+                        {idioma === 'en'
+                          ? 'For the sake of His sorrowful Passion, have mercy on us and on the whole world.'
+                          : 'Por Su Dolorosa Pasión, ten misericordia de nosotros y del mundo entero.'}
                       </p>
                     </PrayerCard>
                   )
                 })()
               ) : screen.prayerId === 'letanias' ? (
-                <PrayerCard
-                  title={letaniasVirgen.title}
-                  onAdvance={advance}
-                >
-                  <div className="space-y-4">
-                    {letaniasVirgen.items[screen.stepIndex]?.response ? (
-                      <p className="text-left text-[20px] text-[var(--rv-rubric)]">
-                        Responder a cada línea:<br/>
-                        <span className="font-bold">"{letaniasVirgen.items[screen.stepIndex].response}"</span>
-                      </p>
-                    ) : null}
-                    <p className="text-left whitespace-pre-line text-[20px] text-[var(--rv-ink)]">
-                      {letaniasVirgen.items[screen.stepIndex]?.text}
-                    </p>
-                  </div>
-                </PrayerCard>
+                (() => {
+                  const letaniaData = idioma === 'en' ? letaniasVirgenEn : letaniasVirgen
+                  const letaniaItem = letaniaData.items[screen.stepIndex]
+                  return (
+                    <PrayerCard
+                      title={letaniaData.title}
+                      onAdvance={advance}
+                    >
+                      <div className="space-y-4">
+                        {letaniaItem?.response ? (
+                          <p className="text-left text-[20px] text-[var(--rv-rubric)]">
+                            {idioma === 'en' ? 'Respond to each line:' : 'Responder a cada línea:'}<br/>
+                            <span className="font-bold">"{letaniaItem.response}"</span>
+                          </p>
+                        ) : null}
+                        <p className="text-left whitespace-pre-line text-[20px] text-[var(--rv-ink)]">
+                          {letaniaItem?.text}
+                        </p>
+                      </div>
+                    </PrayerCard>
+                  )
+                })()
               ) : (
                 <PrayerCard
-                  title="La Salve"
+                  title={idioma === 'en' ? 'Hail Holy Queen' : 'La Salve'}
                   onAdvance={restart}
                 >
                   <p className="text-center whitespace-pre-line text-[20px]">
-                    Dios te salve, Reina y Madre de misericordia,{'\n'}
-                    vida, dulzura y esperanza nuestra.{'\n\n'}
-                    Dios te salve.{'\n\n'}
-                    A Ti clamamos los desterrados hijos de Eva,{'\n'}
-                    a Ti suspiramos, gimiendo y llorando en este valle de lágrimas.{'\n\n'}
-                    Ea, pues, Señora Abogada Nuestra,{'\n'}
-                    vuelve a nosotros tus ojos misericordiosos,{'\n'}
-                    y después de este destierro, muéstranos a Jesús,{'\n'}
-                    fruto bendito de tu vientre.{'\n\n'}
-                    Oh, clemente, oh piadosa, oh dulce Virgen María.{'\n\n'}
-                    Ruega por nosotros, Santa Madre de Dios,{'\n'}
-                    para que seamos dignos de alcanzar las promesas de Nuestro Señor Jesucristo.{'\n\n'}
-                    Amén
+                    {idioma === 'en'
+                      ? `Hail, Holy Queen, Mother of Mercy,\nour life, our sweetness, and our hope.\n\nHail, Holy Queen.\n\nTo thee do we cry, poor banished children of Eve;\nto thee do we send up our sighs,\nmourning and weeping in this valley of tears.\n\nTurn then, most gracious Advocate,\nthine eyes of mercy toward us;\nand after this our exile,\nshow unto us the blessed fruit of thy womb, Jesus.\n\nO clement, O loving, O sweet Virgin Mary.\n\nPray for us, O holy Mother of God,\nthat we may be made worthy\nof the promises of Christ.\n\nAmen.`
+                      : `Dios te salve, Reina y Madre de misericordia,\nvida, dulzura y esperanza nuestra.\n\nDios te salve.\n\nA Ti clamamos los desterrados hijos de Eva,\na Ti suspiramos, gimiendo y llorando en este valle de lágrimas.\n\nEa, pues, Señora Abogada Nuestra,\nvuelve a nosotros tus ojos misericordiosos,\ny después de este destierro, muéstranos a Jesús,\nfruto bendito de tu vientre.\n\nOh, clemente, oh piadosa, oh dulce Virgen María.\n\nRuega por nosotros, Santa Madre de Dios,\npara que seamos dignos de alcanzar las promesas de Nuestro Señor Jesucristo.\n\nAmén`}
                   </p>
                 </PrayerCard>
               )}
@@ -1451,7 +1583,7 @@ export default function App() {
                       onClick={restart}
                       className="w-full rounded-2xl bg-[var(--rv-gold)] px-6 py-4 text-xl font-bold tracking-wide text-white shadow-lg"
                     >
-                      Finalizar
+                      {idioma === 'en' ? 'Finish' : 'Finalizar'}
                     </button>
                   )
                 }
@@ -1465,7 +1597,7 @@ export default function App() {
                       onClick={back}
                       className="w-full rounded-2xl border border-[var(--rv-gold)] bg-transparent px-6 py-4 text-xl font-bold tracking-wide text-[var(--rv-gold)]"
                     >
-                      Atrás
+                      {idioma === 'en' ? 'Back' : 'Atrás'}
                     </button>
                   )
                 }
@@ -1477,14 +1609,14 @@ export default function App() {
                       onClick={back}
                       className="w-1/2 rounded-2xl border border-[var(--rv-gold)] bg-transparent px-6 py-4 text-xl font-bold tracking-wide text-[var(--rv-gold)]"
                     >
-                      Atrás
+                      {idioma === 'en' ? 'Back' : 'Atrás'}
                     </button>
                     <button
                       type="button"
                       onClick={advance}
                       className="w-1/2 rounded-2xl bg-[var(--rv-gold)] px-6 py-4 text-xl font-bold tracking-wide text-white shadow-lg"
                     >
-                      Siguiente
+                      {idioma === 'en' ? 'Next' : 'Siguiente'}
                     </button>
                   </div>
                 )

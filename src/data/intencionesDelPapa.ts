@@ -70,6 +70,44 @@ export const CREDO_LATIN_PARAGRAPHS = [
   'Credo in Spíritum Sanctum, sanctam Ecclésiam cathólicam, sanctórum communiónem, remissiónem peccatórum, carnis resurrectiónem, vitam ætérnam. Amen.',
 ]
 
+export const OUR_FATHER_EN_TEXT =
+  'Our Father,\n' +
+  'who art in heaven,\n' +
+  'hallowed be Thy name;\n' +
+  'Thy kingdom come;\n' +
+  'Thy will be done\n' +
+  'on earth as it is in heaven.\n\n' +
+  'Give us this day our daily bread;\n' +
+  'and forgive us our trespasses,\n' +
+  'as we forgive those\n' +
+  'who trespass against us;\n' +
+  'and lead us not into temptation,\n' +
+  'but deliver us from evil.\n\n' +
+  'Amen'
+
+export const HAIL_MARY_EN_TEXT =
+  'Hail Mary, full of grace, the Lord is with thee; blessed art thou among women, and blessed is the fruit of thy womb, Jesus. Holy Mary, Mother of God, pray for us sinners, now and at the hour of our death. Amen.'
+
+export const GLORY_BE_EN_TEXT =
+  'Glory be to the Father,\n' +
+  'and to the Son,\n' +
+  'and to the Holy Spirit.\n' +
+  'As it was in the beginning,\n' +
+  'is now, and ever shall be,\n' +
+  'world without end.\n' +
+  'Amen'
+
+export const SIGN_OF_CROSS_EN_PARAGRAPHS = [
+  'By the sign of the Holy Cross, deliver us from our enemies, O Lord our God.',
+  'In the name of the Father, and of the Son, and of the Holy Spirit. Amen.',
+]
+
+export const APOSTLES_CREED_EN_PARAGRAPHS = [
+  'I believe in God, the Father Almighty, Creator of heaven and earth.',
+  'And in Jesus Christ, His only Son, our Lord, who was conceived by the Holy Spirit, born of the Virgin Mary, suffered under Pontius Pilate, was crucified, died, and was buried. He descended into hell; on the third day He rose again from the dead; He ascended into heaven, and is seated at the right hand of God, the Father Almighty; from thence He shall come to judge the living and the dead.',
+  'I believe in the Holy Spirit, the Holy Catholic Church, the communion of saints, the forgiveness of sins, the resurrection of the body, and life everlasting. Amen.',
+]
+
 export const intencionesDelPapa: SequenceConfig = {
   id: 'intenciones-del-papa',
   title: 'Intenciones del Papa',

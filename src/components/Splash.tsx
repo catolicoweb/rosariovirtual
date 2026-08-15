@@ -13,8 +13,8 @@ type Props = {
   isManuallySelected: boolean
   showMeditaciones: boolean
   onToggleMeditaciones: () => void
-  idioma: 'es' | 'la'
-  onSetIdioma: (id: 'es' | 'la') => void
+  idioma: 'es' | 'la' | 'en'
+  onSetIdioma: (id: 'es' | 'la' | 'en') => void
 }
 
 export default function Splash({ mysteryLabel, mysteryDays, coverImg, onStart, onSelectMystery, onStandalonePrayer, isManuallySelected, showMeditaciones, onToggleMeditaciones, idioma, onSetIdioma }: Props) {
@@ -42,28 +42,28 @@ export default function Splash({ mysteryLabel, mysteryDays, coverImg, onStart, o
                 className="w-full px-4 py-2 text-left text-[18px] hover:bg-[rgba(178,152,95,0.1)]"
                 onClick={() => { onSelectMystery('gozosos'); setMenuOpen(false) }}
               >
-                Misterios Gozosos
+                {idioma === 'en' ? 'Joyful Mysteries' : 'Misterios Gozosos'}
               </button>
               <button
                 type="button"
                 className="w-full px-4 py-2 text-left text-[18px] hover:bg-[rgba(178,152,95,0.1)]"
                 onClick={() => { onSelectMystery('dolorosos'); setMenuOpen(false) }}
               >
-                Misterios Dolorosos
+                {idioma === 'en' ? 'Sorrowful Mysteries' : 'Misterios Dolorosos'}
               </button>
               <button
                 type="button"
                 className="w-full px-4 py-2 text-left text-[18px] hover:bg-[rgba(178,152,95,0.1)]"
                 onClick={() => { onSelectMystery('gloriosos'); setMenuOpen(false) }}
               >
-                Misterios Gloriosos
+                {idioma === 'en' ? 'Glorious Mysteries' : 'Misterios Gloriosos'}
               </button>
               <button
                 type="button"
                 className="w-full px-4 py-2 text-left text-[18px] hover:bg-[rgba(178,152,95,0.1)]"
                 onClick={() => { onSelectMystery('luminosos'); setMenuOpen(false) }}
               >
-                Misterios Luminosos
+                {idioma === 'en' ? 'Luminous Mysteries' : 'Misterios Luminosos'}
               </button>
               <div className="my-2 border-t border-[var(--rv-border)]" />
               <button
@@ -71,25 +71,25 @@ export default function Splash({ mysteryLabel, mysteryDays, coverImg, onStart, o
                 className="w-full px-4 py-2 text-left text-[18px] hover:bg-[rgba(178,152,95,0.1)]"
                 onClick={() => { onStandalonePrayer('divina-misericordia'); setMenuOpen(false) }}
               >
-                Coronilla de la Divina Misericordia
+                {idioma === 'en' ? 'Chaplet of Divine Mercy' : 'Coronilla de la Divina Misericordia'}
               </button>
               <button
                 type="button"
                 className="w-full px-4 py-2 text-left text-[18px] hover:bg-[rgba(178,152,95,0.1)]"
                 onClick={() => { onStandalonePrayer('letanias'); setMenuOpen(false) }}
               >
-                Letanías a la Virgen
+                {idioma === 'en' ? 'Litany of the Virgin' : 'Letanías a la Virgen'}
               </button>
               <button
                 type="button"
                 className="w-full px-4 py-2 text-left text-[18px] hover:bg-[rgba(178,152,95,0.1)]"
                 onClick={() => { onStandalonePrayer('salve'); setMenuOpen(false) }}
               >
-                Salve
+                {idioma === 'en' ? 'Hail Holy Queen' : 'Salve'}
               </button>
               <div className="my-2 border-t border-[var(--rv-border)]" />
               <div className="flex items-center justify-between px-4 py-2">
-                <span className="text-[18px]">Meditaciones</span>
+                <span className="text-[18px]">{idioma === 'en' ? 'Meditations' : 'Meditaciones'}</span>
                 <button
                   type="button"
                   role="switch"
@@ -110,7 +110,7 @@ export default function Splash({ mysteryLabel, mysteryDays, coverImg, onStart, o
               </div>
               <div className="my-2 border-t border-[var(--rv-border)]" />
               <div className="flex items-center justify-between px-4 py-2">
-                <span className="text-[18px]">Idioma</span>
+                <span className="text-[18px]">{idioma === 'en' ? 'Language' : 'Idioma'}</span>
                 <div className="flex gap-2">
                   <button
                     type="button"
@@ -122,6 +122,17 @@ export default function Splash({ mysteryLabel, mysteryDays, coverImg, onStart, o
                     aria-label="Español"
                   >
                     🇪🇸
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); onSetIdioma('en') }}
+                    className={
+                      'rounded-md px-2 py-1 text-2xl transition-opacity ' +
+                      (idioma === 'en' ? 'ring-2 ring-[#b2985f] opacity-100' : 'opacity-40')
+                    }
+                    aria-label="English"
+                  >
+                    🇬🇧
                   </button>
                   <button
                     type="button"
@@ -141,9 +152,9 @@ export default function Splash({ mysteryLabel, mysteryDays, coverImg, onStart, o
         ) : null}
 
         <div className="text-center pt-5">
-          <div className="text-4xl font-medium tracking-wide">Rosario Meditado</div>
+          <div className="text-4xl font-medium tracking-wide">{idioma === 'en' ? 'The Holy Rosary' : 'Rosario Meditado'}</div>
           <div className="mt-2 text-lg text-[var(--rv-ink-muted)]">
-            {!isManuallySelected && <div>Hoy meditamos:</div>}
+            {!isManuallySelected && <div>{idioma === 'en' ? 'Today we meditate:' : 'Hoy meditamos:'}</div>}
             <div className="font-medium text-[25px] text-[#b2985f]">{mysteryLabel}</div>
             {isManuallySelected && <div className="text-[var(--rv-ink-muted)]">{mysteryDays}</div>}
           </div>
