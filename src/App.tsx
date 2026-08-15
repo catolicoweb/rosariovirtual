@@ -39,7 +39,7 @@ import divinaMisericordiaCruzCuestasJpg from './assets/divinamicericordia-cruzcu
 import divinaMisericordiaCruzJpg from './assets/divinamicericordia-cruz.jpg'
 import { getMysteryOfDay, MYSTERIES, type MysteryId } from './data/mystery'
 import { steps } from './data/prayerSteps'
-import { AVE_MARIA_TEXT } from './data/intencionesDelPapa'
+import { AVE_MARIA_TEXT, AVE_MARIA_LATIN_TEXT, PATER_NOSTER_TEXT, GLORIA_LATIN_TEXT, SIGNUM_CRUCIS_PARAGRAPHS, CREDO_LATIN_PARAGRAPHS } from './data/intencionesDelPapa'
 import { letaniasVirgen } from './data/letaniasVirgen'
 
 const PRIMER_MISTERIO_MEDITACIONES = [
@@ -381,6 +381,57 @@ export default function App() {
     }
   }, [showPrayerExpanded])
 
+  const [showMeditaciones, setShowMeditaciones] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return true
+    try {
+      const raw = window.localStorage.getItem('rv_show_meditaciones')
+      if (raw === '0') return false
+      return true
+    } catch {
+      return true
+    }
+  })
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem('rv_show_meditaciones', showMeditaciones ? '1' : '0')
+    } catch {
+      return
+    }
+  }, [showMeditaciones])
+
+  const [idioma, setIdioma] = useState<'es' | 'la'>(() => {
+    if (typeof window === 'undefined') return 'es'
+    try {
+      const raw = window.localStorage.getItem('rv_idioma')
+      if (raw === 'la') return 'la'
+      return 'es'
+    } catch {
+      return 'es'
+    }
+  })
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem('rv_idioma', idioma)
+    } catch {
+      return
+    }
+  }, [idioma])
+
+  function prayerText(itemId: string | undefined, originalText: string | undefined): string {
+    if (!itemId || !originalText) return originalText ?? ''
+    if (idioma !== 'la') return originalText
+    if (itemId === 'padre-nuestro') return PATER_NOSTER_TEXT
+    if (itemId.startsWith('avemaria-')) return AVE_MARIA_LATIN_TEXT
+    if (itemId === 'gloria') return GLORIA_LATIN_TEXT
+    return originalText
+  }
+
+  const [mysteryMenuOpen, setMysteryMenuOpen] = useState(false)
+
+  useEffect(() => { setMysteryMenuOpen(false) }, [screen])
+
   useEffect(() => {
     if (
       screen.kind === 'standalone' &&
@@ -672,6 +723,10 @@ export default function App() {
               onStandalonePrayer={(prayerId) => {
                 navigate({ kind: 'standalone', prayerId, stepIndex: 0 })
               }}
+              showMeditaciones={showMeditaciones}
+              onToggleMeditaciones={() => setShowMeditaciones(v => !v)}
+              idioma={idioma}
+              onSetIdioma={setIdioma}
             />
           ) : null}
 
@@ -705,7 +760,7 @@ export default function App() {
                   return (
                     <>
                       <PrayerCard
-                        title={step.title}
+                        title={idioma === 'la' && step.id === 'credo' ? 'Credo' : step.title}
                         mark={crossMark}
                         onAdvance={isAntesDeFinalizar || isLetanias || isCierreFinal ? undefined : advance}
                       >
@@ -760,7 +815,10 @@ export default function App() {
                           </button>
                         </>
                       ) : (
-                        step.paragraphs.map((p: string) => (
+                        (idioma === 'la' && step.id === 'inicio' ? SIGNUM_CRUCIS_PARAGRAPHS
+                          : idioma === 'la' && step.id === 'credo' ? CREDO_LATIN_PARAGRAPHS
+                          : step.paragraphs
+                        ).map((p: string) => (
                           <p
                             key={p}
                             className={
@@ -937,6 +995,77 @@ export default function App() {
                       title={isMisterio ? undefined : step.sequence.title}
                       onAdvance={advance}
                     >
+                      {isMisterio ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); setMysteryMenuOpen(v => !v) }}
+                            className="absolute right-3 top-3 z-10 p-2 text-[var(--rv-ink-muted)] hover:text-[var(--rv-ink)]"
+                            aria-label="Opciones"
+                          >
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                              <circle cx="10" cy="4" r="1.5" />
+                              <circle cx="10" cy="10" r="1.5" />
+                              <circle cx="10" cy="16" r="1.5" />
+                            </svg>
+                          </button>
+                          {mysteryMenuOpen ? (
+                            <div
+                              className="absolute right-3 top-12 z-20 w-64 rounded-xl border border-[var(--rv-border)] bg-white shadow-lg"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <div className="flex items-center justify-between px-4 py-3">
+                                <span className="text-[18px]">Meditaciones</span>
+                                <button
+                                  type="button"
+                                  role="switch"
+                                  aria-checked={showMeditaciones}
+                                  onClick={(e) => { e.stopPropagation(); setShowMeditaciones(v => !v) }}
+                                  className={
+                                    'relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ' +
+                                    (showMeditaciones ? 'bg-[#b2985f]' : 'bg-[rgba(26,26,26,0.2)]')
+                                  }
+                                >
+                                  <span
+                                    className={
+                                      'inline-block h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ' +
+                                      (showMeditaciones ? 'translate-x-6' : 'translate-x-1')
+                                    }
+                                  />
+                                </button>
+                              </div>
+                              <div className="border-t border-[var(--rv-border)]" />
+                              <div className="flex items-center justify-between px-4 py-3">
+                                <span className="text-[18px]">Idioma</span>
+                                <div className="flex gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => { e.stopPropagation(); setIdioma('es') }}
+                                    className={
+                                      'rounded-md px-2 py-1 text-2xl transition-opacity ' +
+                                      (idioma === 'es' ? 'ring-2 ring-[#b2985f] opacity-100' : 'opacity-40')
+                                    }
+                                    aria-label="Español"
+                                  >
+                                    🇪🇸
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => { e.stopPropagation(); setIdioma('la') }}
+                                    className={
+                                      'rounded-md px-2 py-1 text-2xl transition-opacity ' +
+                                      (idioma === 'la' ? 'ring-2 ring-[#b2985f] opacity-100' : 'opacity-40')
+                                    }
+                                    aria-label="Latín"
+                                  >
+                                    🇻🇦
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          ) : null}
+                        </>
+                      ) : null}
                       {mysteryHeader ? (
                         <div className="text-center">
                           <div className="text-xl font-medium tracking-wide text-[#b2985f]">
@@ -980,7 +1109,7 @@ export default function App() {
 
                       {isAveMariaExpandable ? (
                         <>
-                          {isAveMariaMisterio && meditationText ? (
+                          {isAveMariaMisterio && meditationText && showMeditaciones ? (
                             <p className="text-left text-[28px] italic whitespace-pre-line">
                               {meditationText}
                             </p>
@@ -1015,7 +1144,10 @@ export default function App() {
                             {showPrayerExpanded ? (
                               <>
                                 <div className="my-3 border-t border-[rgba(178,152,95,0.2)]" />
-                                <p className="text-right whitespace-pre-line text-[20px]">{AVE_MARIA_TEXT}</p>
+                                <div className="text-[20px]">
+                                  <p>{(idioma === 'la' ? AVE_MARIA_LATIN_TEXT : AVE_MARIA_TEXT).replace(/ Amén?\.$/, '')}</p>
+                                  <p className="text-right mt-1">{idioma === 'la' ? 'Amen.' : 'Amén.'}</p>
+                                </div>
                               </>
                             ) : null}
                           </div>
@@ -1052,7 +1184,7 @@ export default function App() {
                             {showPrayerExpanded ? (
                               <>
                                 <div className="my-3 border-t border-[rgba(178,152,95,0.2)]" />
-                                <p className="text-right whitespace-pre-line text-[20px]">{item?.text}</p>
+                                <p className="text-right whitespace-pre-line text-[20px]">{prayerText(item?.id, item?.text)}</p>
                               </>
                             ) : null}
                           </div>
@@ -1065,7 +1197,7 @@ export default function App() {
                           <p className="text-left whitespace-pre-line text-[20px] text-[var(--rv-ink)]">{item?.text}</p>
                         </div>
                       ) : (
-                        <p className="text-center whitespace-pre-line text-[20px]">{item?.text}</p>
+                        <p className="text-center whitespace-pre-line text-[20px]">{prayerText(item?.id, item?.text)}</p>
                       )}
                     </PrayerCard>
                   </>
@@ -1099,9 +1231,9 @@ export default function App() {
                       draggable={false}
                     />
                     <p className="whitespace-pre-line text-center text-[20px]">
-                      Por la señal de la Santa Cruz, de nuestros enemigos, líbranos Señor, Dios nuestro.
-                      {'\n\n'}
-                      En el nombre del Padre, del Hijo y del Espíritu Santo. Amén.
+                      {idioma === 'la'
+                        ? SIGNUM_CRUCIS_PARAGRAPHS.join('\n\n')
+                        : 'Por la señal de la Santa Cruz, de nuestros enemigos, líbranos Señor, Dios nuestro.\n\nEn el nombre del Padre, del Hijo y del Espíritu Santo. Amén.'}
                     </p>
                   </PrayerCard>
                 ) : screen.stepIndex === 1 ? (
@@ -1112,11 +1244,11 @@ export default function App() {
                     )
                     return (
                       <PrayerCard
-                        title={credoStep?.title ?? 'Credo'}
+                        title="Credo"
                         mark={<CrossIcon glow size="large" />}
                         onAdvance={advance}
                       >
-                        {credoStep?.paragraphs.map((p) => (
+                        {(idioma === 'la' ? CREDO_LATIN_PARAGRAPHS : credoStep?.paragraphs ?? []).map((p) => (
                           <p key={p} className="whitespace-pre-line text-[20px]">
                             {p}
                           </p>
@@ -1126,25 +1258,27 @@ export default function App() {
                   })()
                 ) : screen.stepIndex === 2 ? (
                   <PrayerCard
-                    title="Ave María"
+                    title={idioma === 'la' ? 'Ave María' : 'Ave María'}
                     mark={<CrossIcon glow size="large" />}
                     onAdvance={advance}
                   >
                     <p className="text-[20px]">
-                      Dios te salve María, llena eres de gracia, el Señor es contigo; bendita tú eres entre todas las mujeres, y bendito es el fruto de tu vientre, Jesús. Santa María, Madre de Dios, ruega por nosotros, pecadores, ahora y en la hora de nuestra muerte.
+                      {(idioma === 'la' ? AVE_MARIA_LATIN_TEXT : AVE_MARIA_TEXT).replace(/ Amén?\.$/, '')}
                     </p>
-                    <p className="text-right text-[20px]">Amén.</p>
+                    <p className="text-right text-[20px]">{idioma === 'la' ? 'Amen.' : 'Amén.'}</p>
                   </PrayerCard>
                 ) : screen.stepIndex === 3 ? (
                   <PrayerCard
-                    title="Gloria"
+                    title={idioma === 'la' ? 'Glória Patri' : 'Gloria'}
                     mark={<CrossIcon glow size="large" />}
                     onAdvance={advance}
                   >
-                    <p className="text-[20px]">
-                      Gloria al Padre, y al Hijo, y al Espíritu Santo. Como era en el principio, ahora y siempre, por los siglos de los siglos.
+                    <p className="whitespace-pre-line text-[20px]">
+                      {idioma === 'la'
+                        ? GLORIA_LATIN_TEXT.replace(/\nAmen$/, '')
+                        : 'Gloria al Padre, y al Hijo, y al Espíritu Santo. Como era en el principio, ahora y siempre, por los siglos de los siglos.'}
                     </p>
-                    <p className="text-right text-[20px]">Amén.</p>
+                    <p className="text-right text-[20px]">{idioma === 'la' ? 'Amen.' : 'Amén.'}</p>
                   </PrayerCard>
                 ) : screen.stepIndex >= 59 && screen.stepIndex <= 61 ? (
                   <PrayerCard onAdvance={advance}>

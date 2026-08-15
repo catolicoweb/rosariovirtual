@@ -11,7 +11,7 @@ type Props = {
 export default function PrayerCard({ title, subtitle, mark, children, onAdvance }: Props) {
   return (
     <div
-      className="w-full rounded-2xl border border-[var(--rv-border)] bg-white/60 px-6 py-7 shadow-sm backdrop-blur-sm"
+      className="relative w-full rounded-2xl border border-[var(--rv-border)] bg-white/60 px-6 py-7 shadow-sm backdrop-blur-sm"
       onClick={onAdvance}
       role={onAdvance ? 'button' : undefined}
       tabIndex={onAdvance ? 0 : undefined}

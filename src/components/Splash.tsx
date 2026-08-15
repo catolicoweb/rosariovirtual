@@ -11,9 +11,13 @@ type Props = {
   onSelectMystery: (id: MysteryId) => void
   onStandalonePrayer: (prayerId: 'letanias' | 'salve' | 'divina-misericordia') => void
   isManuallySelected: boolean
+  showMeditaciones: boolean
+  onToggleMeditaciones: () => void
+  idioma: 'es' | 'la'
+  onSetIdioma: (id: 'es' | 'la') => void
 }
 
-export default function Splash({ mysteryLabel, mysteryDays, coverImg, onStart, onSelectMystery, onStandalonePrayer, isManuallySelected }: Props) {
+export default function Splash({ mysteryLabel, mysteryDays, coverImg, onStart, onSelectMystery, onStandalonePrayer, isManuallySelected, showMeditaciones, onToggleMeditaciones, idioma, onSetIdioma }: Props) {
   const [menuOpen, setMenuOpen] = useState(false)
 
   return (
@@ -83,6 +87,55 @@ export default function Splash({ mysteryLabel, mysteryDays, coverImg, onStart, o
               >
                 Salve
               </button>
+              <div className="my-2 border-t border-[var(--rv-border)]" />
+              <div className="flex items-center justify-between px-4 py-2">
+                <span className="text-[18px]">Meditaciones</span>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={showMeditaciones}
+                  onClick={(e) => { e.stopPropagation(); onToggleMeditaciones() }}
+                  className={
+                    'relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ' +
+                    (showMeditaciones ? 'bg-[#b2985f]' : 'bg-[rgba(26,26,26,0.2)]')
+                  }
+                >
+                  <span
+                    className={
+                      'inline-block h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ' +
+                      (showMeditaciones ? 'translate-x-6' : 'translate-x-1')
+                    }
+                  />
+                </button>
+              </div>
+              <div className="my-2 border-t border-[var(--rv-border)]" />
+              <div className="flex items-center justify-between px-4 py-2">
+                <span className="text-[18px]">Idioma</span>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); onSetIdioma('es') }}
+                    className={
+                      'rounded-md px-2 py-1 text-2xl transition-opacity ' +
+                      (idioma === 'es' ? 'ring-2 ring-[#b2985f] opacity-100' : 'opacity-40')
+                    }
+                    aria-label="Español"
+                  >
+                    🇪🇸
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); onSetIdioma('la') }}
+                    className={
+                      'rounded-md px-2 py-1 text-2xl transition-opacity ' +
+                      (idioma === 'la' ? 'ring-2 ring-[#b2985f] opacity-100' : 'opacity-40')
+                    }
+                    aria-label="Latín"
+                  >
+                    🇻🇦
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         ) : null}
