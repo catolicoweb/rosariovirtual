@@ -1546,15 +1546,15 @@ export default function App() {
               {idioma === 'en' ? 'Mysteries' : 'Misterios'}
             </div>
             {([
-              { id: 'gozosos', es: 'Misterios Gozosos', en: 'Joyful Mysteries' },
-              { id: 'dolorosos', es: 'Misterios Dolorosos', en: 'Sorrowful Mysteries' },
-              { id: 'gloriosos', es: 'Misterios Gloriosos', en: 'Glorious Mysteries' },
-              { id: 'luminosos', es: 'Misterios Luminosos', en: 'Luminous Mysteries' },
+              { id: 'gozosos',   es: 'Misterios Gozosos',   en: 'Joyful Mysteries',    daysEs: 'Lun · Sáb', daysEn: 'Mon · Sat' },
+              { id: 'dolorosos', es: 'Misterios Dolorosos', en: 'Sorrowful Mysteries', daysEs: 'Mar · Vie', daysEn: 'Tue · Fri' },
+              { id: 'gloriosos', es: 'Misterios Gloriosos', en: 'Glorious Mysteries',  daysEs: 'Mié · Dom', daysEn: 'Wed · Sun' },
+              { id: 'luminosos', es: 'Misterios Luminosos', en: 'Luminous Mysteries',  daysEs: 'Jue',       daysEn: 'Thu' },
             ] as const).map(m => (
               <button
                 key={m.id}
                 type="button"
-                className="w-full px-5 py-4 text-left text-[18px] hover:bg-[rgba(178,152,95,0.08)] active:bg-[rgba(178,152,95,0.15)]"
+                className="flex w-full items-center justify-between px-5 py-4 hover:bg-[rgba(178,152,95,0.08)] active:bg-[rgba(178,152,95,0.15)]"
                 onClick={() => {
                   setMystery(MYSTERIES[m.id])
                   setIsManuallySelected(true)
@@ -1562,7 +1562,8 @@ export default function App() {
                   setGlobalMenuOpen(false)
                 }}
               >
-                {idioma === 'en' ? m.en : m.es}
+                <span className="text-[18px]">{idioma === 'en' ? m.en : m.es}</span>
+                <span className="text-[14px] text-[var(--rv-ink-muted)]">{idioma === 'en' ? m.daysEn : m.daysEs}</span>
               </button>
             ))}
 
