@@ -1563,7 +1563,7 @@ export default function App() {
                 }}
               >
                 <span className="text-[18px]">{idioma === 'en' ? m.en : m.es}</span>
-                <span className="text-[14px] text-[var(--rv-ink-muted)]">{idioma === 'en' ? m.daysEn : m.daysEs}</span>
+                <span className="text-[18px] text-[var(--rv-ink-muted)]">{idioma === 'en' ? m.daysEn : m.daysEs}</span>
               </button>
             ))}
 
