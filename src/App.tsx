@@ -37,7 +37,7 @@ import divinaMisericordiaFlagelacionJpg from './assets/divinamicericordia-flagel
 import divinaMisericordiaCoronacionJpg from './assets/divinamicericordia-coronacion.jpg'
 import divinaMisericordiaCruzCuestasJpg from './assets/divinamicericordia-cruzcuestas.jpg'
 import divinaMisericordiaCruzJpg from './assets/divinamicericordia-cruz.jpg'
-import { getMysteryOfDay, MYSTERIES, type MysteryId } from './data/mystery'
+import { getMysteryOfDay, MYSTERIES, MYSTERY_NAMES, MYSTERY_DESCRIPTIONS, type MysteryId } from './data/mystery'
 import { steps } from './data/prayerSteps'
 import { AVE_MARIA_TEXT, AVE_MARIA_LATIN_TEXT, PATER_NOSTER_TEXT, GLORIA_LATIN_TEXT, SIGNUM_CRUCIS_PARAGRAPHS, CREDO_LATIN_PARAGRAPHS, OUR_FATHER_EN_TEXT, HAIL_MARY_EN_TEXT, GLORY_BE_EN_TEXT, SIGN_OF_CROSS_EN_PARAGRAPHS, APOSTLES_CREED_EN_PARAGRAPHS } from './data/intencionesDelPapa'
 import { letaniasVirgen } from './data/letaniasVirgen'
@@ -449,6 +449,17 @@ export default function App() {
     }
   }, [latinPrayers])
 
+  const [textSize, setTextSize] = useState<number>(() => {
+    const saved = localStorage.getItem('rv-text-size')
+    return saved ? parseInt(saved, 10) : 2
+  })
+
+  useEffect(() => {
+    const sizes = ['18px', '20px', '24px', '28px']
+    document.documentElement.style.setProperty('--rv-prayer-size', sizes[textSize - 1])
+    try { localStorage.setItem('rv-text-size', String(textSize)) } catch { /* noop */ }
+  }, [textSize])
+
   function prayerText(itemId: string | undefined, originalText: string | undefined): string {
     if (!itemId || !originalText) return originalText ?? ''
     if (latinPrayers) {
@@ -467,6 +478,9 @@ export default function App() {
   }
 
   const [globalMenuOpen, setGlobalMenuOpen] = useState(false)
+  const [menuMysteriesOpen, setMenuMysteriesOpen] = useState(false)
+  const [menuPrayersOpen, setMenuPrayersOpen] = useState(false)
+  const [menuSettingsOpen, setMenuSettingsOpen] = useState(true)
 
   useEffect(() => {
     if (
@@ -727,6 +741,137 @@ export default function App() {
     </button>
   )
 
+  // ── Desktop step view helpers ──────────────────────────────────
+  const mysteryStepImages: Record<MysteryId, string[]> = {
+    gozosos:   [anunciacionJpg, visitaJpg, nacimientoJpg, presentacionTemploJpg, perdidoHalladoTemploJpg],
+    dolorosos: [oracionHuertoJpg, flagelacionJpg, coronacionJpg, cruzACuestasJpg, crucifixionJpg],
+    gloriosos: [resurreccionJpg, ascencionJpg, pentecostesJpg, asuncionVirgenJpg, coronacionVirgenJpg],
+    luminosos: [bautismoJpg, bodasDeCanaJpg, reinoDiosJpg, transfiguracionJpg, eucaristiaJpg],
+  }
+
+  const desktopContextImage = (() => {
+    if (screen.kind !== 'step') return cruzPng
+    const si = screen.stepIndex
+    if (si >= 3 && si <= 7) return mysteryStepImages[mystery.id][si - 3]
+    return cruzPng
+  })()
+
+  const desktopSectionLabel = (() => {
+    if (screen.kind !== 'step') return ''
+    const si = screen.stepIndex
+    if (si <= 2) return idioma === 'en' ? 'Before the Mysteries' : 'Antes de los Misterios'
+    if (si >= 3 && si <= 7) {
+      const nums = ['I', 'II', 'III', 'IV', 'V']
+      return `${idioma === 'en' ? 'Mystery' : 'Misterio'} ${nums[si - 3]}`
+    }
+    return idioma === 'en' ? 'Closing' : 'Final'
+  })()
+
+  // What to show in the desktop center column
+  const desktopCenterContent = (() => {
+    if (screen.kind !== 'step') return null
+    const step = activeSteps[screen.stepIndex]
+    if (!step) return null
+
+    if (step.kind === 'text') {
+      const title =
+        step.id === 'credo' && latinPrayers ? 'Credo' :
+        step.id === 'credo' && idioma === 'en' ? "Apostles' Creed" :
+        step.id === 'la-salve' && idioma === 'en' ? 'Hail Holy Queen' :
+        step.title ?? ''
+      const paras =
+        latinPrayers && step.id === 'inicio' ? SIGNUM_CRUCIS_PARAGRAPHS :
+        idioma === 'en' && step.id === 'inicio' ? SIGN_OF_CROSS_EN_PARAGRAPHS :
+        latinPrayers && step.id === 'credo' ? CREDO_LATIN_PARAGRAPHS :
+        idioma === 'en' && step.id === 'credo' ? APOSTLES_CREED_EN_PARAGRAPHS :
+        step.paragraphs
+      return { kind: 'text' as const, title, paras, stepId: step.id }
+    }
+
+    const item = step.sequence.items[screen.sequenceIndex]
+    const rawText = prayerText(item?.id, item?.text)
+    const prayerName =
+      item?.id === 'padre-nuestro' ? (idioma === 'en' ? 'Our Father' : 'Padre Nuestro') :
+      item?.id?.startsWith('avemaria-') ? (idioma === 'en' ? 'Hail Mary' : 'Ave María') :
+      item?.id === 'gloria' ? (idioma === 'en' ? 'Glory Be' : 'Gloria al Padre') :
+      (item?.id ?? '')
+
+    // Meditation text (avemaria beads inside mystery decades only)
+    const isMisterioSeq = step.id.includes('misterio')
+    const isAveMariaMisterioSeq = isMisterioSeq && !!item?.id?.startsWith('avemaria-')
+    const meditationText = (() => {
+      if (!isAveMariaMisterioSeq) return null
+      const match = item?.id?.match(/avemaria-(\d+)/)
+      const idx = match?.[1] ? Number(match[1]) : NaN
+      if (!Number.isFinite(idx) || idx < 1) return null
+      const mysteryNum = step.id === 'primer-misterio' ? 1
+        : step.id === 'segundo-misterio' ? 2
+        : step.id === 'tercer-misterio' ? 3
+        : step.id === 'cuarto-misterio' ? 4
+        : step.id === 'quinto-misterio' ? 5 : 0
+      if (mysteryNum === 0) return null
+      const meditacionesEs: Record<string, Record<number, string[]>> = {
+        gloriosos: { 1: PRIMER_MISTERIO_MEDITACIONES, 2: SEGUNDO_MISTERIO_MEDITACIONES, 3: TERCER_MISTERIO_MEDITACIONES, 4: CUARTO_MISTERIO_MEDITACIONES, 5: QUINTO_MISTERIO_MEDITACIONES },
+        dolorosos: { 1: DOLOROSO_1_MEDITACIONES, 2: DOLOROSO_2_MEDITACIONES, 3: DOLOROSO_3_MEDITACIONES, 4: DOLOROSO_4_MEDITACIONES, 5: DOLOROSO_5_MEDITACIONES },
+        gozosos:   { 1: GOZOSO_1_MEDITACIONES, 2: GOZOSO_2_MEDITACIONES, 3: GOZOSO_3_MEDITACIONES, 4: GOZOSO_4_MEDITACIONES, 5: GOZOSO_5_MEDITACIONES },
+        luminosos: { 1: LUMINOSO_1_MEDITACIONES, 2: LUMINOSO_2_MEDITACIONES, 3: LUMINOSO_3_MEDITACIONES, 4: LUMINOSO_4_MEDITACIONES, 5: LUMINOSO_5_MEDITACIONES },
+      }
+      const meditacionesEn: Record<string, Record<number, string[]>> = {
+        gloriosos: { 1: GLORIOUS_1_EN_MEDITACIONES, 2: GLORIOUS_2_EN_MEDITACIONES, 3: GLORIOUS_3_EN_MEDITACIONES, 4: GLORIOUS_4_EN_MEDITACIONES, 5: GLORIOUS_5_EN_MEDITACIONES },
+        dolorosos: { 1: SORROWFUL_1_EN_MEDITACIONES, 2: SORROWFUL_2_EN_MEDITACIONES, 3: SORROWFUL_3_EN_MEDITACIONES, 4: SORROWFUL_4_EN_MEDITACIONES, 5: SORROWFUL_5_EN_MEDITACIONES },
+        gozosos:   { 1: JOYFUL_1_EN_MEDITACIONES, 2: JOYFUL_2_EN_MEDITACIONES, 3: JOYFUL_3_EN_MEDITACIONES, 4: JOYFUL_4_EN_MEDITACIONES, 5: JOYFUL_5_EN_MEDITACIONES },
+        luminosos: { 1: LUMINOUS_1_EN_MEDITACIONES, 2: LUMINOUS_2_EN_MEDITACIONES, 3: LUMINOUS_3_EN_MEDITACIONES, 4: LUMINOUS_4_EN_MEDITACIONES, 5: LUMINOUS_5_EN_MEDITACIONES },
+      }
+      const arr = (idioma === 'en' ? meditacionesEn : meditacionesEs)[mystery.id]?.[mysteryNum]
+      if (!arr || idx > arr.length) return null
+      return arr[idx - 1]
+    })()
+
+    return {
+      kind: 'sequence' as const,
+      prayerName,
+      sequenceTitle: step.sequence.title ?? '',
+      text: rawText,
+      total: step.sequence.items.length,
+      current: screen.sequenceIndex,
+      meditationText: showMeditaciones ? meditationText : null,
+    }
+  })()
+
+  // Mystery progress for the right column dots
+  function getMysteryBeadProgress(decadeIdx: number) {
+    const stepIdx = decadeIdx + 3
+    if (screen.kind !== 'step') return { done: 0, active: -1 }
+    if (screen.stepIndex < stepIdx) return { done: 0, active: -1 }
+    if (screen.stepIndex > stepIdx) return { done: 12, active: -1 }
+    return { done: screen.sequenceIndex, active: screen.sequenceIndex }
+  }
+
+  const coverImgSrc = {
+    gloriosos: misteriosGloriososJpg,
+    dolorosos: misteriosDolorososJpg,
+    gozosos: misteriosGozososJpg,
+    luminosos: misteriosLuminososJpg,
+  }[mystery.id]
+
+  const mysteryLabelEn = {
+    gozosos: 'Joyful Mysteries',
+    dolorosos: 'Sorrowful Mysteries',
+    gloriosos: 'Glorious Mysteries',
+    luminosos: 'Luminous Mysteries',
+  }[mystery.id]
+
+  const todayLabel = useMemo(() => {
+    const d = new Date()
+    const dayNames = idioma === 'en'
+      ? ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+      : ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
+    const monthNames = idioma === 'en'
+      ? ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+      : ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+    return `${dayNames[d.getDay()].toUpperCase()} · ${d.getDate()} ${monthNames[d.getMonth()].toUpperCase()}`
+  }, [idioma])
+
   const bottomAction = (() => {
     const labelStart = idioma === 'en' ? 'Begin' : 'Iniciar'
     const labelBack = idioma === 'en' ? 'Back to start' : 'Volver al inicio'
@@ -745,6 +890,365 @@ export default function App() {
   })()
 
   return (
+    <>
+    {/* ── Desktop Splash Layout ────────────────────────────── */}
+    {screen.kind === 'splash' ? (
+      <div className="fixed inset-0 z-30 hidden md:flex bg-[var(--rv-paper)]">
+
+        {/* Left: full-height cover image */}
+        <div className="relative h-full w-[45%] flex-shrink-0 overflow-hidden">
+          <img
+            src={coverImgSrc}
+            alt={idioma === 'en' ? mysteryLabelEn : mystery.label}
+            className="absolute inset-0 h-full w-full object-cover"
+            draggable={false}
+          />
+          <div className="absolute bottom-5 left-6 text-[11px] uppercase tracking-[0.12em] text-white/60">
+            {idioma === 'en' ? mysteryLabelEn : mystery.label}
+          </div>
+        </div>
+
+        {/* Right: editorial content */}
+        <div className="flex flex-1 flex-col overflow-hidden">
+
+          {/* Header */}
+          <div className="flex flex-shrink-0 items-center justify-between px-12 pb-5 pt-8">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#b2985f]">
+              {idioma === 'en' ? 'The Holy Rosary' : 'Rosario Meditado'}
+            </span>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => { setMenuSettingsOpen(true); setMenuMysteriesOpen(false); setMenuPrayersOpen(false); setGlobalMenuOpen(true) }}
+                className="border border-[var(--rv-ink)] px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.10em] hover:bg-[rgba(26,26,26,0.05)] transition-colors"
+              >
+                {idioma === 'en' ? 'Settings' : 'Ajustes'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setGlobalMenuOpen(true)}
+                className="border border-[var(--rv-ink)] px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.10em] hover:bg-[rgba(26,26,26,0.05)] transition-colors"
+              >
+                {idioma === 'en' ? 'Menu' : 'Menú'}
+              </button>
+            </div>
+          </div>
+
+          {/* Rule */}
+          <div className="mx-12 flex-shrink-0 border-t border-[var(--rv-border)]" />
+
+          {/* Main content — vertically centred */}
+          <div className="flex flex-1 flex-col justify-center gap-7 overflow-hidden px-12">
+
+            {/* Date */}
+            <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--rv-ink-muted)]">
+              {todayLabel}
+            </div>
+
+            {/* Mystery title */}
+            <h1 className="text-[62px] font-medium leading-[1.05] tracking-[-0.01em]">
+              {idioma === 'en' ? mysteryLabelEn : mystery.label}
+            </h1>
+
+            {/* Description */}
+            <p className="max-w-[500px] text-justify text-[16px] leading-relaxed text-[var(--rv-ink-muted)]">
+              {MYSTERY_DESCRIPTIONS[mystery.id][idioma]}
+            </p>
+
+            {/* 5-mystery columns */}
+            <div className="flex divide-x divide-[var(--rv-border)] border-b border-t border-[var(--rv-border)]">
+              {MYSTERY_NAMES[mystery.id][idioma].map((name, i) => (
+                <div key={i} className="flex-1 px-4 py-4 first:pl-0">
+                  <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#b2985f]">
+                    {['I', 'II', 'III', 'IV', 'V'][i]}
+                  </div>
+                  <div className="text-[14px] leading-snug">{name}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center gap-8">
+              <button
+                type="button"
+                onClick={advance}
+                className="border border-[#b2985f] px-10 py-3.5 text-[12px] font-semibold uppercase tracking-[0.14em] text-[#b2985f] transition-colors hover:bg-[rgba(178,152,95,0.08)]"
+              >
+                {idioma === 'en' ? 'Begin' : 'Comenzar'}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setMenuMysteriesOpen(true); setMenuSettingsOpen(false); setMenuPrayersOpen(false); setGlobalMenuOpen(true) }}
+                className="text-[14px] text-[var(--rv-ink-muted)] underline transition-colors hover:text-[var(--rv-ink)]"
+              >
+                {idioma === 'en' ? 'Choose another set in Menu' : 'Elegir otro misterio en el Menú'}
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    ) : null}
+
+    {/* ── Desktop Step Layout (3 columns) ─────────────────────── */}
+    {screen.kind === 'step' ? (
+      <div className="fixed inset-0 z-30 hidden flex-col bg-[var(--rv-paper)] md:flex">
+
+        {/* Top bar */}
+        <div className="flex flex-shrink-0 items-center justify-between border-b border-[var(--rv-border)] px-8 py-3">
+          <div className="flex items-center gap-3">
+            <span className="text-[20px] font-semibold text-[#b2985f]">
+              {idioma === 'en' ? 'The Holy Rosary' : 'El Santo Rosario'}
+            </span>
+            <span className="text-[var(--rv-border)]">|</span>
+            <span className="text-[20px] text-[var(--rv-ink-muted)]">
+              {idioma === 'en' ? mysteryLabelEn : mystery.label}
+              {' · '}
+              {desktopSectionLabel}
+            </span>
+          </div>
+          <div className="flex items-center gap-4">
+            {desktopCenterContent?.kind === 'sequence' ? (
+              <span className="text-[13px] text-[var(--rv-ink-muted)]">
+                {desktopCenterContent.current + 1} of {desktopCenterContent.total}
+              </span>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => setGlobalMenuOpen(true)}
+              className="border border-[var(--rv-ink)] px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.10em] hover:bg-[rgba(26,26,26,0.05)]"
+            >
+              {idioma === 'en' ? 'Menu' : 'Menú'}
+            </button>
+          </div>
+        </div>
+
+        {/* Three columns */}
+        <div className="flex flex-1 overflow-hidden">
+
+          {/* ── Col 1: Context panel (mystery image + section steps) ── */}
+          <div className="flex w-[340px] flex-shrink-0 flex-col overflow-y-auto border-r border-[var(--rv-border)]">
+            <div className="p-6 pb-4">
+              <img
+                src={desktopContextImage}
+                alt=""
+                draggable={false}
+                className="w-full rounded border border-[var(--rv-border)] object-cover"
+                style={{ maxHeight: '260px', objectPosition: 'center top' }}
+              />
+            </div>
+            <div className="px-6 pt-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#b2985f]">
+              {desktopSectionLabel}
+            </div>
+            {/* High-level section navigation */}
+            <div className="mt-2 flex-1 px-6 pb-6">
+              {[
+                { label: idioma === 'en' ? 'Opening' : 'Inicio', range: [0, 2] as [number, number] },
+                { label: MYSTERY_NAMES[mystery.id][idioma][0], range: [3, 3] as [number, number] },
+                { label: MYSTERY_NAMES[mystery.id][idioma][1], range: [4, 4] as [number, number] },
+                { label: MYSTERY_NAMES[mystery.id][idioma][2], range: [5, 5] as [number, number] },
+                { label: MYSTERY_NAMES[mystery.id][idioma][3], range: [6, 6] as [number, number] },
+                { label: MYSTERY_NAMES[mystery.id][idioma][4], range: [7, 7] as [number, number] },
+                { label: idioma === 'en' ? 'Closing' : 'Cierre', range: [8, 11] as [number, number] },
+              ].map((section, i) => {
+                const si = screen.kind === 'step' ? screen.stepIndex : -1
+                const isCurrent = si >= section.range[0] && si <= section.range[1]
+                const isDone = si > section.range[1]
+                const num = i === 0 ? null : i <= 5 ? ['I','II','III','IV','V'][i - 1] : null
+                return (
+                  <div
+                    key={i}
+                    className={`flex items-start gap-3 border-l-2 py-3 pl-3 ${isCurrent ? 'border-[#b2985f]' : 'border-transparent'}`}
+                  >
+                    {num ? (
+                      <span className="w-6 flex-shrink-0 text-[13px] text-[#b2985f]">{num}</span>
+                    ) : (
+                      <span className="w-6 flex-shrink-0" />
+                    )}
+                    <span className={`text-[18px] leading-snug ${
+                      isCurrent ? 'font-semibold text-[var(--rv-ink)]' :
+                      isDone ? 'text-[var(--rv-ink-muted)]' :
+                      'text-[var(--rv-ink-muted)]'
+                    }`}>
+                      {section.label}
+                      {isDone ? <span className="ml-1 text-[#b2985f]">✓</span> : null}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* ── Col 2: Prayer text (center) ─────────────────────── */}
+          <div className="flex flex-1 flex-col overflow-hidden">
+            <motion.div
+              key={`desktop-step-${screen.kind === 'step' ? screen.stepIndex : 0}-${screen.kind === 'step' ? screen.sequenceIndex : 0}`}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: isFadingOut ? 0 : 1, y: isFadingOut ? -8 : 0 }}
+              transition={{ duration: isFadingOut ? 0.3 : 0.2, ease: 'easeOut' }}
+              className="flex-1 overflow-y-auto px-16 py-12"
+            >
+
+              {desktopCenterContent?.kind === 'text' ? (
+                <>
+                  {desktopCenterContent.stepId === 'antes-de-finalizar' ? (
+                    <div className="flex flex-col gap-4 max-w-xl">
+                      <h2 className="text-[36px] font-medium">{idioma === 'en' ? 'Before we finish' : 'Antes de finalizar'}</h2>
+                      <hr className="border-[var(--rv-border)]" />
+                      <button
+                        type="button"
+                        onClick={() => goToStepId('letanias')}
+                        className="flex items-center justify-between rounded-xl border border-[rgba(178,152,95,0.3)] px-5 py-4 text-left hover:bg-[rgba(178,152,95,0.06)]"
+                      >
+                        <span className="text-[18px]">{idioma === 'en' ? 'Litany of the Virgin Mary' : 'Letanías a la Virgen María'}</span>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => goToStepId('cierre-final')}
+                        className="flex items-center justify-between rounded-xl border border-[rgba(178,152,95,0.3)] px-5 py-4 text-left hover:bg-[rgba(178,152,95,0.06)]"
+                      >
+                        <span className="text-[18px]">{idioma === 'en' ? 'Skip and Finish' : 'Saltear y Finalizar'}</span>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="max-w-2xl">
+                      <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--rv-ink-muted)]">
+                        {desktopSectionLabel}
+                      </p>
+                      {desktopCenterContent.title ? (
+                        <h2 className="mb-6 text-[42px] font-medium leading-tight">
+                          {desktopCenterContent.title}
+                        </h2>
+                      ) : null}
+                      <hr className="mb-8 border-[var(--rv-border)]" />
+                      {desktopCenterContent.paras.map((p, i) => (
+                        <p key={i} className="mb-5 text-justify text-[20px] leading-relaxed whitespace-pre-line">
+                          {p}
+                        </p>
+                      ))}
+                    </div>
+                  )}
+                </>
+              ) : desktopCenterContent?.kind === 'sequence' ? (
+                <div className="max-w-2xl">
+                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--rv-ink-muted)]">
+                    {desktopSectionLabel} · {desktopCenterContent.sequenceTitle}
+                  </p>
+                  <h2 className="mb-6 text-[42px] font-medium leading-tight">
+                    {desktopCenterContent.prayerName}
+                  </h2>
+                  <hr className="mb-8 border-[var(--rv-border)]" />
+                  {desktopCenterContent.meditationText ? (
+                    <p className="mb-8 whitespace-pre-line text-left text-[26px] italic leading-relaxed text-[var(--rv-ink)]">
+                      {desktopCenterContent.meditationText}
+                    </p>
+                  ) : null}
+                  {desktopCenterContent.text.split('\n\n').filter(Boolean).map((p, i) => (
+                    <p key={i} className="mb-5 text-justify text-[20px] leading-relaxed whitespace-pre-line">
+                      {p}
+                    </p>
+                  ))}
+                </div>
+              ) : null}
+
+            </motion.div>
+
+            {/* Bottom navigation */}
+            <div className="flex flex-shrink-0 items-center gap-5 border-t border-[var(--rv-border)] px-16 py-5">
+              <button
+                type="button"
+                onClick={() => navigate(computePrev(screen))}
+                className="flex items-center gap-2 border border-[var(--rv-border)] px-5 py-2.5 text-[12px] font-semibold uppercase tracking-[0.10em] hover:bg-[rgba(26,26,26,0.05)]"
+              >
+                ← {idioma === 'en' ? 'Back' : 'Anterior'}
+              </button>
+              <button
+                type="button"
+                onClick={advance}
+                className="flex items-center gap-2 border border-[#b2985f] px-6 py-2.5 text-[12px] font-semibold uppercase tracking-[0.10em] text-[#b2985f] hover:bg-[rgba(178,152,95,0.08)]"
+              >
+                {idioma === 'en' ? 'Continue' : 'Continuar'} →
+              </button>
+              <span className="text-[13px] text-[var(--rv-ink-muted)]">
+                {idioma === 'en' ? 'or click anywhere · space' : 'o hacé click · espacio'}
+              </span>
+            </div>
+          </div>
+
+          {/* ── Col 3: Mysteries overview with bead dots ──────────── */}
+          <div className="flex w-[340px] flex-shrink-0 flex-col overflow-y-auto border-l border-[var(--rv-border)] px-6 py-5">
+            {/* Opening mini-row */}
+            <div className="mb-5">
+              <div className={`mb-1 text-[10px] font-semibold uppercase tracking-[0.12em] ${screen.stepIndex <= 2 ? 'text-[#b2985f]' : 'text-[var(--rv-ink-muted)]'}`}>
+                {idioma === 'en' ? 'Opening' : 'Inicio'}
+              </div>
+              <div className="flex gap-1">
+                {[0, 1, 2].map(si => (
+                  <div
+                    key={si}
+                    className={`h-2 w-2 rounded-full border ${
+                      screen.stepIndex > si ? 'border-[#b2985f] bg-[#b2985f]' :
+                      screen.stepIndex === si ? 'border-[#b2985f] bg-[rgba(178,152,95,0.4)]' :
+                      'border-[var(--rv-ink-muted)] opacity-30'
+                    }`}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* 5 mysteries with bead dots */}
+            {MYSTERY_NAMES[mystery.id][idioma].map((name, di) => {
+              const { done, active } = getMysteryBeadProgress(di)
+              return (
+                <div key={di} className="mb-5">
+                  <div className="mb-0.5 text-[11px] font-semibold text-[#b2985f]">
+                    {['I', 'II', 'III', 'IV', 'V'][di]}
+                  </div>
+                  <div className={`mb-2 text-[13px] leading-snug ${screen.stepIndex === di + 3 ? 'font-medium' : 'text-[var(--rv-ink-muted)]'}`}>
+                    {name}
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {Array.from({ length: 12 }, (_, j) => (
+                      <div
+                        key={j}
+                        className={`h-2.5 w-2.5 rounded-full border ${
+                          j < done ? 'border-[#b2985f] bg-[#b2985f]' :
+                          j === active ? 'border-[#b2985f] bg-[rgba(178,152,95,0.4)]' :
+                          'border-[rgba(26,26,26,0.2)]'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )
+            })}
+
+            {/* Closing */}
+            <div className="mt-1">
+              <div className={`mb-1 text-[10px] font-semibold uppercase tracking-[0.12em] ${screen.stepIndex >= 8 ? 'text-[#b2985f]' : 'text-[var(--rv-ink-muted)]'}`}>
+                {idioma === 'en' ? 'Closing' : 'Cierre'}
+              </div>
+              <div className="flex gap-1">
+                {[8, 9, 10, 11].map(si => (
+                  <div
+                    key={si}
+                    className={`h-2 w-2 rounded-full border ${
+                      screen.stepIndex > si ? 'border-[#b2985f] bg-[#b2985f]' :
+                      screen.stepIndex === si ? 'border-[#b2985f] bg-[rgba(178,152,95,0.4)]' :
+                      'border-[var(--rv-ink-muted)] opacity-30'
+                    }`}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    ) : null}
+
     <AppShell>
       <motion.div
         key={
@@ -897,7 +1401,7 @@ export default function App() {
                             className={
                               p === 'Jesús dice: recen así...'
                                 ? 'text-center text-[1.02rem] text-[var(--rv-rubric)]'
-                                : 'whitespace-pre-line text-[20px]'
+                                : 'whitespace-pre-line [font-size:var(--rv-prayer-size)]'
                             }
                           >
                             {p}
@@ -1192,7 +1696,7 @@ export default function App() {
                             }}
                           >
                             <div className="flex w-full items-center justify-between text-left cursor-pointer">
-                              <span className="text-[20px] font-bold text-[rgba(26,26,26,0.78)]">{idioma === 'en' ? 'Hail Mary' : 'Avemaría'}</span>
+                              <span className="[font-size:var(--rv-prayer-size)] font-bold text-[rgba(26,26,26,0.78)]">{idioma === 'en' ? 'Hail Mary' : 'Avemaría'}</span>
                               <span
                                 className={
                                   'text-[rgba(26,26,26,0.38)] transition-transform duration-200 ' +
@@ -1214,7 +1718,7 @@ export default function App() {
                             {showPrayerExpanded ? (
                               <>
                                 <div className="my-3 border-t border-[rgba(178,152,95,0.2)]" />
-                                <div className="text-[20px]">
+                                <div className="[font-size:var(--rv-prayer-size)]">
                                   <p>{(latinPrayers ? AVE_MARIA_LATIN_TEXT : idioma === 'en' ? HAIL_MARY_EN_TEXT : AVE_MARIA_TEXT).replace(/ A[m]e[n]\.$/i, '')}</p>
                                   <p className="text-right mt-1">{latinPrayers || idioma === 'en' ? 'Amen.' : 'Amén.'}</p>
                                 </div>
@@ -1232,7 +1736,7 @@ export default function App() {
                             }}
                           >
                             <div className="flex w-full items-center justify-between text-left cursor-pointer">
-                              <span className="text-[20px] font-bold text-[rgba(26,26,26,0.78)]">{idioma === 'en' ? 'Our Father' : 'Padre Nuestro'}</span>
+                              <span className="[font-size:var(--rv-prayer-size)] font-bold text-[rgba(26,26,26,0.78)]">{idioma === 'en' ? 'Our Father' : 'Padre Nuestro'}</span>
                               <span
                                 className={
                                   'text-[rgba(26,26,26,0.38)] transition-transform duration-200 ' +
@@ -1254,7 +1758,7 @@ export default function App() {
                             {showPrayerExpanded ? (
                               <>
                                 <div className="my-3 border-t border-[rgba(178,152,95,0.2)]" />
-                                <p className="text-right whitespace-pre-line text-[20px]">{prayerText(item?.id, item?.text)}</p>
+                                <p className="text-right whitespace-pre-line [font-size:var(--rv-prayer-size)]">{prayerText(item?.id, item?.text)}</p>
                               </>
                             ) : null}
                           </div>
@@ -1266,18 +1770,18 @@ export default function App() {
                             return (
                               <>
                                 {letaniaItem?.response ? (
-                                  <p className="text-left text-[20px] text-[var(--rv-rubric)]">
+                                  <p className="text-left [font-size:var(--rv-prayer-size)] text-[var(--rv-rubric)]">
                                     {idioma === 'en' ? 'Respond to each line:' : 'Responder a cada línea:'}<br/>
                                     <span className="font-bold">"{letaniaItem.response}"</span>
                                   </p>
                                 ) : null}
-                                <p className="text-left whitespace-pre-line text-[20px] text-[var(--rv-ink)]">{letaniaItem?.text}</p>
+                                <p className="text-left whitespace-pre-line [font-size:var(--rv-prayer-size)] text-[var(--rv-ink)]">{letaniaItem?.text}</p>
                               </>
                             )
                           })()}
                         </div>
                       ) : (
-                        <p className="text-center whitespace-pre-line text-[20px]">{prayerText(item?.id, item?.text)}</p>
+                        <p className="text-center whitespace-pre-line [font-size:var(--rv-prayer-size)]">{prayerText(item?.id, item?.text)}</p>
                       )}
                     </PrayerCard>
                   </>
@@ -1313,7 +1817,7 @@ export default function App() {
                       className="w-full rounded-xl border border-[var(--rv-border)] bg-white/40 object-contain"
                       draggable={false}
                     />
-                    <p className="whitespace-pre-line text-center text-[20px]">
+                    <p className="whitespace-pre-line text-center [font-size:var(--rv-prayer-size)]">
                       {latinPrayers
                         ? SIGNUM_CRUCIS_PARAGRAPHS.join('\n\n')
                         : idioma === 'en'
@@ -1335,7 +1839,7 @@ export default function App() {
                       menuSlot={inCardHamburger}
                       >
                         {(latinPrayers ? CREDO_LATIN_PARAGRAPHS : idioma === 'en' ? APOSTLES_CREED_EN_PARAGRAPHS : credoStep?.paragraphs ?? []).map((p) => (
-                          <p key={p} className="whitespace-pre-line text-[20px]">
+                          <p key={p} className="whitespace-pre-line [font-size:var(--rv-prayer-size)]">
                             {p}
                           </p>
                         ))}
@@ -1349,10 +1853,10 @@ export default function App() {
                     onAdvance={advance}
                   menuSlot={inCardHamburger}
                   >
-                    <p className="text-[20px]">
+                    <p className="[font-size:var(--rv-prayer-size)]">
                       {(latinPrayers ? AVE_MARIA_LATIN_TEXT : idioma === 'en' ? HAIL_MARY_EN_TEXT : AVE_MARIA_TEXT).replace(/ A[m]e[n]\.$/i, '')}
                     </p>
-                    <p className="text-right text-[20px]">{latinPrayers || idioma === 'en' ? 'Amen.' : 'Amén.'}</p>
+                    <p className="text-right [font-size:var(--rv-prayer-size)]">{latinPrayers || idioma === 'en' ? 'Amen.' : 'Amén.'}</p>
                   </PrayerCard>
                 ) : screen.stepIndex === 3 ? (
                   <PrayerCard
@@ -1361,14 +1865,14 @@ export default function App() {
                     onAdvance={advance}
                   menuSlot={inCardHamburger}
                   >
-                    <p className="whitespace-pre-line text-[20px]">
+                    <p className="whitespace-pre-line [font-size:var(--rv-prayer-size)]">
                       {latinPrayers
                         ? GLORIA_LATIN_TEXT.replace(/\nAmen$/, '')
                         : idioma === 'en'
                         ? GLORY_BE_EN_TEXT.replace(/\nAmen$/, '')
                         : 'Gloria al Padre, y al Hijo, y al Espíritu Santo. Como era en el principio, ahora y siempre, por los siglos de los siglos.'}
                     </p>
-                    <p className="text-right text-[20px]">{latinPrayers || idioma === 'en' ? 'Amen.' : 'Amén.'}</p>
+                    <p className="text-right [font-size:var(--rv-prayer-size)]">{latinPrayers || idioma === 'en' ? 'Amen.' : 'Amén.'}</p>
                   </PrayerCard>
                 ) : screen.stepIndex >= 59 && screen.stepIndex <= 61 ? (
                   <PrayerCard onAdvance={advance} menuSlot={inCardHamburger}>
@@ -1381,7 +1885,7 @@ export default function App() {
                     <p className="text-center text-[var(--rv-rubric)] text-[18px]">
                       {`${screen.stepIndex - 58}/3`}
                     </p>
-                    <p className="whitespace-pre-line text-[20px]">
+                    <p className="whitespace-pre-line [font-size:var(--rv-prayer-size)]">
                       {idioma === 'en'
                         ? `Holy God, Holy Mighty One, Holy Immortal One,\nhave mercy on us and on the whole world.`
                         : `Santo Dios, Santo Fuerte, Santo Inmortal,\nten misericordia de nosotros y del mundo entero.`}
@@ -1395,7 +1899,7 @@ export default function App() {
                       className="w-full rounded-xl border border-[var(--rv-border)] bg-white/40 object-contain"
                       draggable={false}
                     />
-                    <p className="whitespace-pre-line text-[20px]">
+                    <p className="whitespace-pre-line [font-size:var(--rv-prayer-size)]">
                       {idioma === 'en'
                         ? 'O Blood and Water, which gushed forth from the Heart of Jesus as a fount of mercy for us, I trust in Thee.'
                         : 'Oh Sangre y Agua que brotasteis del Corazón de Jesús como una fuente de misericordia para nosotros, en Vos confío.'}
@@ -1407,7 +1911,7 @@ export default function App() {
                     onAdvance={advance}
                   menuSlot={inCardHamburger}
                   >
-                    <p className="whitespace-pre-line text-[20px]">
+                    <p className="whitespace-pre-line [font-size:var(--rv-prayer-size)]">
                       {idioma === 'en'
                         ? 'In the name of the Father, and of the Son, and of the Holy Spirit.'
                         : 'En el nombre del Padre, del Hijo y del Espíritu Santo.'}
@@ -1440,7 +1944,7 @@ export default function App() {
                           className="w-full rounded-xl border border-[var(--rv-border)] bg-white/40 object-contain"
                           draggable={false}
                         />
-                        <p className="whitespace-pre-line text-[20px]">
+                        <p className="whitespace-pre-line [font-size:var(--rv-prayer-size)]">
                           {idioma === 'en'
                             ? 'Eternal Father, I offer Thee the Body and Blood, Soul and Divinity of Thy dearly beloved Son, Our Lord Jesus Christ, in atonement for our sins and those of the whole world.'
                             : 'Padre Eterno, te ofrezco el Cuerpo y Sangre, el Alma y la Divinidad de Tu Amadísimo Hijo y Señor Nuestro Jesucristo, en propiciación de nuestros pecados y los del mundo entero.'}
@@ -1456,7 +1960,7 @@ export default function App() {
                         className="w-full rounded-xl border border-[var(--rv-border)] bg-white/40 object-contain"
                         draggable={false}
                       />
-                      <p className="whitespace-pre-line text-[20px]">
+                      <p className="whitespace-pre-line [font-size:var(--rv-prayer-size)]">
                         {idioma === 'en'
                           ? 'For the sake of His sorrowful Passion, have mercy on us and on the whole world.'
                           : 'Por Su Dolorosa Pasión, ten misericordia de nosotros y del mundo entero.'}
@@ -1476,12 +1980,12 @@ export default function App() {
                     >
                       <div className="space-y-4">
                         {letaniaItem?.response ? (
-                          <p className="text-left text-[20px] text-[var(--rv-rubric)]">
+                          <p className="text-left [font-size:var(--rv-prayer-size)] text-[var(--rv-rubric)]">
                             {idioma === 'en' ? 'Respond to each line:' : 'Responder a cada línea:'}<br/>
                             <span className="font-bold">"{letaniaItem.response}"</span>
                           </p>
                         ) : null}
-                        <p className="text-left whitespace-pre-line text-[20px] text-[var(--rv-ink)]">
+                        <p className="text-left whitespace-pre-line [font-size:var(--rv-prayer-size)] text-[var(--rv-ink)]">
                           {letaniaItem?.text}
                         </p>
                       </div>
@@ -1494,7 +1998,7 @@ export default function App() {
                   onAdvance={restart}
                 menuSlot={inCardHamburger}
                 >
-                  <p className="text-center whitespace-pre-line text-[20px]">
+                  <p className="text-center whitespace-pre-line [font-size:var(--rv-prayer-size)]">
                     {idioma === 'en'
                       ? `Hail, Holy Queen, Mother of Mercy,\nour life, our sweetness, and our hope.\n\nHail, Holy Queen.\n\nTo thee do we cry, poor banished children of Eve;\nto thee do we send up our sighs,\nmourning and weeping in this valley of tears.\n\nTurn then, most gracious Advocate,\nthine eyes of mercy toward us;\nand after this our exile,\nshow unto us the blessed fruit of thy womb, Jesus.\n\nO clement, O loving, O sweet Virgin Mary.\n\nPray for us, O holy Mother of God,\nthat we may be made worthy\nof the promises of Christ.\n\nAmen.`
                       : `Dios te salve, Reina y Madre de misericordia,\nvida, dulzura y esperanza nuestra.\n\nDios te salve.\n\nA Ti clamamos los desterrados hijos de Eva,\na Ti suspiramos, gimiendo y llorando en este valle de lágrimas.\n\nEa, pues, Señora Abogada Nuestra,\nvuelve a nosotros tus ojos misericordiosos,\ny después de este destierro, muéstranos a Jesús,\nfruto bendito de tu vientre.\n\nOh, clemente, oh piadosa, oh dulce Virgen María.\n\nRuega por nosotros, Santa Madre de Dios,\npara que seamos dignos de alcanzar las promesas de Nuestro Señor Jesucristo.\n\nAmén`}
@@ -1510,7 +2014,7 @@ export default function App() {
         <button
           type="button"
           onClick={() => setGlobalMenuOpen(true)}
-          className="fixed right-4 top-4 z-40 p-2 text-[var(--rv-ink-muted)] hover:text-[var(--rv-ink)]"
+          className="fixed right-4 top-4 z-40 p-2 text-[var(--rv-ink-muted)] hover:text-[var(--rv-ink)] md:hidden"
           aria-label={idioma === 'en' ? 'Menu' : 'Menú'}
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1541,110 +2045,177 @@ export default function App() {
 
           {/* Scrollable content */}
           <div className="flex-1 overflow-y-auto">
-            {/* Mysteries */}
-            <div className="px-5 pb-1 pt-5 text-[13px] font-semibold uppercase tracking-[0.08em] text-[var(--rv-ink-muted)]">
-              {idioma === 'en' ? 'Mysteries' : 'Misterios'}
-            </div>
-            {([
-              { id: 'gozosos',   es: 'Misterios Gozosos',   en: 'Joyful Mysteries',    daysEs: 'Lun · Sáb', daysEn: 'Mon · Sat' },
-              { id: 'dolorosos', es: 'Misterios Dolorosos', en: 'Sorrowful Mysteries', daysEs: 'Mar · Vie', daysEn: 'Tue · Fri' },
-              { id: 'gloriosos', es: 'Misterios Gloriosos', en: 'Glorious Mysteries',  daysEs: 'Mié · Dom', daysEn: 'Wed · Sun' },
-              { id: 'luminosos', es: 'Misterios Luminosos', en: 'Luminous Mysteries',  daysEs: 'Jue',       daysEn: 'Thu' },
-            ] as const).map(m => (
-              <button
-                key={m.id}
-                type="button"
-                className="flex w-full items-center justify-between px-5 py-4 hover:bg-[rgba(178,152,95,0.08)] active:bg-[rgba(178,152,95,0.15)]"
-                onClick={() => {
-                  setMystery(MYSTERIES[m.id])
-                  setIsManuallySelected(true)
-                  if (screen.kind !== 'splash') navigate({ kind: 'splash' })
-                  setGlobalMenuOpen(false)
-                }}
+
+            {/* ── Mysteries accordion ── */}
+            <button
+              type="button"
+              onClick={() => setMenuMysteriesOpen(v => !v)}
+              className="flex w-full items-center justify-between px-5 py-4 hover:bg-[rgba(178,152,95,0.08)]"
+            >
+              <span className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[var(--rv-ink-muted)]">
+                {idioma === 'en' ? 'Mysteries' : 'Misterios'}
+              </span>
+              <svg
+                width="18" height="18" viewBox="0 0 24 24" fill="none"
+                className={'text-[var(--rv-ink-muted)] transition-transform duration-200 ' + (menuMysteriesOpen ? 'rotate-180' : '')}
               >
-                <span className="text-[18px]">{idioma === 'en' ? m.en : m.es}</span>
-                <span className="text-[18px] text-[var(--rv-ink-muted)]">{idioma === 'en' ? m.daysEn : m.daysEs}</span>
-              </button>
-            ))}
-
-            <div className="mx-5 my-3 border-t border-[var(--rv-border)]" />
-
-            {/* Standalone prayers */}
-            <div className="px-5 pb-1 text-[13px] font-semibold uppercase tracking-[0.08em] text-[var(--rv-ink-muted)]">
-              {idioma === 'en' ? 'Prayers' : 'Oraciones'}
-            </div>
-            {([
-              { id: 'divina-misericordia', es: 'Coronilla de la Divina Misericordia', en: 'Chaplet of Divine Mercy' },
-              { id: 'letanias', es: 'Letanías a la Virgen', en: 'Litany of the Virgin' },
-              { id: 'salve', es: 'Salve', en: 'Hail Holy Queen' },
-            ] as const).map(p => (
-              <button
-                key={p.id}
-                type="button"
-                className="w-full px-5 py-4 text-left text-[18px] hover:bg-[rgba(178,152,95,0.08)] active:bg-[rgba(178,152,95,0.15)]"
-                onClick={() => {
-                  navigate({ kind: 'standalone', prayerId: p.id, stepIndex: 0 })
-                  setGlobalMenuOpen(false)
-                }}
-              >
-                {idioma === 'en' ? p.en : p.es}
-              </button>
-            ))}
-
-            <div className="mx-5 my-3 border-t border-[var(--rv-border)]" />
-
-            {/* Settings */}
-            <div className="px-5 pb-1 text-[13px] font-semibold uppercase tracking-[0.08em] text-[var(--rv-ink-muted)]">
-              {idioma === 'en' ? 'Settings' : 'Configuración'}
-            </div>
-            <div className="flex items-center justify-between px-5 py-4">
-              <span className="text-[18px]">{idioma === 'en' ? 'Meditations' : 'Meditaciones'}</span>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={showMeditaciones}
-                onClick={() => setShowMeditaciones(v => !v)}
-                className={'relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-200 ' + (showMeditaciones ? 'bg-[#b2985f]' : 'bg-[rgba(26,26,26,0.2)]')}
-              >
-                <span className={'inline-block h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 ' + (showMeditaciones ? 'translate-x-6' : 'translate-x-1')} />
-              </button>
-            </div>
-            <div className="mx-5 border-t border-[var(--rv-border)]" />
-            <div className="flex items-center justify-between px-5 py-4">
-              <span className="text-[18px]">{idioma === 'en' ? 'Language' : 'Idioma'}</span>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIdioma('es')}
-                  className={'rounded-md px-2 py-1 text-2xl ' + (idioma === 'es' ? 'ring-2 ring-[#b2985f] bg-[rgba(178,152,95,0.10)]' : '')}
-                  aria-label="Español"
-                >🇪🇸</button>
-                <button
-                  type="button"
-                  onClick={() => setIdioma('en')}
-                  className={'rounded-md px-2 py-1 text-2xl ' + (idioma === 'en' ? 'ring-2 ring-[#b2985f] bg-[rgba(178,152,95,0.10)]' : '')}
-                  aria-label="English"
-                >🇬🇧</button>
+                <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+            {menuMysteriesOpen ? (
+              <div className="border-t border-[var(--rv-border)]">
+                {([
+                  { id: 'gozosos',   es: 'Misterios Gozosos',   en: 'Joyful Mysteries',    daysEs: 'Lun · Sáb', daysEn: 'Mon · Sat' },
+                  { id: 'dolorosos', es: 'Misterios Dolorosos', en: 'Sorrowful Mysteries', daysEs: 'Mar · Vie', daysEn: 'Tue · Fri' },
+                  { id: 'gloriosos', es: 'Misterios Gloriosos', en: 'Glorious Mysteries',  daysEs: 'Mié · Dom', daysEn: 'Wed · Sun' },
+                  { id: 'luminosos', es: 'Misterios Luminosos', en: 'Luminous Mysteries',  daysEs: 'Jue',       daysEn: 'Thu' },
+                ] as const).map(m => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    className="flex w-full items-center justify-between px-5 py-4 hover:bg-[rgba(178,152,95,0.08)] active:bg-[rgba(178,152,95,0.15)]"
+                    onClick={() => {
+                      setMystery(MYSTERIES[m.id])
+                      setIsManuallySelected(true)
+                      if (screen.kind !== 'splash') navigate({ kind: 'splash' })
+                      setGlobalMenuOpen(false)
+                    }}
+                  >
+                    <span className="text-[18px]">{idioma === 'en' ? m.en : m.es}</span>
+                    <span className="text-[18px] text-[var(--rv-ink-muted)]">{idioma === 'en' ? m.daysEn : m.daysEs}</span>
+                  </button>
+                ))}
               </div>
-            </div>
+            ) : null}
+
             <div className="mx-5 border-t border-[var(--rv-border)]" />
-            <div className="flex items-center justify-between px-5 py-4">
-              <span className="text-[18px]">{idioma === 'en' ? 'Latin prayers' : 'Oraciones en latín'}</span>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={latinPrayers}
-                onClick={() => setLatinPrayers(v => !v)}
-                className={'relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-200 ' + (latinPrayers ? 'bg-[#b2985f]' : 'bg-[rgba(26,26,26,0.2)]')}
+
+            {/* ── Prayers accordion ── */}
+            <button
+              type="button"
+              onClick={() => setMenuPrayersOpen(v => !v)}
+              className="flex w-full items-center justify-between px-5 py-4 hover:bg-[rgba(178,152,95,0.08)]"
+            >
+              <span className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[var(--rv-ink-muted)]">
+                {idioma === 'en' ? 'Prayers' : 'Oraciones'}
+              </span>
+              <svg
+                width="18" height="18" viewBox="0 0 24 24" fill="none"
+                className={'text-[var(--rv-ink-muted)] transition-transform duration-200 ' + (menuPrayersOpen ? 'rotate-180' : '')}
               >
-                <span className={'inline-block h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 ' + (latinPrayers ? 'translate-x-6' : 'translate-x-1')} />
-              </button>
-            </div>
+                <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+            {menuPrayersOpen ? (
+              <div className="border-t border-[var(--rv-border)]">
+                {([
+                  { id: 'divina-misericordia', es: 'Coronilla de la Divina Misericordia', en: 'Chaplet of Divine Mercy' },
+                  { id: 'letanias', es: 'Letanías a la Virgen', en: 'Litany of the Virgin' },
+                  { id: 'salve', es: 'Salve', en: 'Hail Holy Queen' },
+                ] as const).map(p => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    className="w-full px-5 py-4 text-left text-[18px] hover:bg-[rgba(178,152,95,0.08)] active:bg-[rgba(178,152,95,0.15)]"
+                    onClick={() => {
+                      navigate({ kind: 'standalone', prayerId: p.id, stepIndex: 0 })
+                      setGlobalMenuOpen(false)
+                    }}
+                  >
+                    {idioma === 'en' ? p.en : p.es}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+
+            <div className="mx-5 border-t border-[var(--rv-border)]" />
+
+            {/* ── Settings accordion (open by default) ── */}
+            <button
+              type="button"
+              onClick={() => setMenuSettingsOpen(v => !v)}
+              className="flex w-full items-center justify-between px-5 py-4 hover:bg-[rgba(178,152,95,0.08)]"
+            >
+              <span className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[var(--rv-ink-muted)]">
+                {idioma === 'en' ? 'Settings' : 'Configuración'}
+              </span>
+              <svg
+                width="18" height="18" viewBox="0 0 24 24" fill="none"
+                className={'text-[var(--rv-ink-muted)] transition-transform duration-200 ' + (menuSettingsOpen ? 'rotate-180' : '')}
+              >
+                <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+            {menuSettingsOpen ? (
+              <div className="border-t border-[var(--rv-border)]">
+                <div className="flex items-center justify-between px-5 py-4">
+                  <span className="text-[18px]">{idioma === 'en' ? 'Meditations' : 'Meditaciones'}</span>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={showMeditaciones}
+                    onClick={() => setShowMeditaciones(v => !v)}
+                    className={'relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-200 ' + (showMeditaciones ? 'bg-[#b2985f]' : 'bg-[rgba(26,26,26,0.2)]')}
+                  >
+                    <span className={'inline-block h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 ' + (showMeditaciones ? 'translate-x-6' : 'translate-x-1')} />
+                  </button>
+                </div>
+                <div className="mx-5 border-t border-[var(--rv-border)]" />
+                <div className="flex items-center justify-between px-5 py-4">
+                  <span className="text-[18px]">{idioma === 'en' ? 'Language' : 'Idioma'}</span>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setIdioma('es')}
+                      className={'rounded-md px-2 py-1 text-2xl ' + (idioma === 'es' ? 'ring-2 ring-[#b2985f] bg-[rgba(178,152,95,0.10)]' : '')}
+                      aria-label="Español"
+                    >🇪🇸</button>
+                    <button
+                      type="button"
+                      onClick={() => setIdioma('en')}
+                      className={'rounded-md px-2 py-1 text-2xl ' + (idioma === 'en' ? 'ring-2 ring-[#b2985f] bg-[rgba(178,152,95,0.10)]' : '')}
+                      aria-label="English"
+                    >🇬🇧</button>
+                  </div>
+                </div>
+                <div className="mx-5 border-t border-[var(--rv-border)]" />
+                <div className="flex items-center justify-between px-5 py-4">
+                  <span className="text-[18px]">{idioma === 'en' ? 'Latin prayers' : 'Oraciones en latín'}</span>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={latinPrayers}
+                    onClick={() => setLatinPrayers(v => !v)}
+                    className={'relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-200 ' + (latinPrayers ? 'bg-[#b2985f]' : 'bg-[rgba(26,26,26,0.2)]')}
+                  >
+                    <span className={'inline-block h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 ' + (latinPrayers ? 'translate-x-6' : 'translate-x-1')} />
+                  </button>
+                </div>
+                <div className="mx-5 border-t border-[var(--rv-border)]" />
+                <div className="px-5 py-4">
+                  <span className="text-[18px]">{idioma === 'en' ? 'Text size' : 'Tamaño del texto'}</span>
+                  <div className="mt-3 flex items-center gap-3">
+                    <span className="select-none text-[15px] font-medium text-[var(--rv-ink-muted)]">A</span>
+                    <input
+                      type="range"
+                      min={1}
+                      max={4}
+                      step={1}
+                      value={textSize}
+                      onChange={e => setTextSize(Number(e.target.value))}
+                      className="h-1.5 flex-1 cursor-pointer appearance-none rounded-full bg-[rgba(26,26,26,0.15)] accent-[#b2985f]"
+                    />
+                    <span className="select-none text-[24px] font-medium text-[var(--rv-ink-muted)]">A</span>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
           </div>
         </div>
       ) : null}
 
-      <div className="fixed bottom-0 left-0 right-0">
+      <div className={`fixed bottom-0 left-0 right-0${(screen.kind === 'splash' || screen.kind === 'step') ? ' md:hidden' : ''}`}>
         <div className="w-full rounded-t-3xl border-t border-[rgba(26,26,26,0.10)] bg-white/90 shadow-2xl backdrop-blur">
           <div
             className="mx-auto w-full max-w-xl px-5 pt-5"
@@ -1736,5 +2307,6 @@ export default function App() {
         </div>
       </div>
     </AppShell>
+    </>
   )
 }

@@ -32,7 +32,7 @@ export default function PrayerCard({ title, subtitle, mark, children, onAdvance,
         {subtitle ? (
           <p className="text-center text-[var(--rv-rubric)]">{subtitle}</p>
         ) : null}
-        <div className="flex flex-col gap-4 text-[1.12rem] leading-relaxed text-[var(--rv-ink)]">
+        <div className="flex flex-col gap-4 leading-relaxed text-[var(--rv-ink)]" style={{ fontSize: 'var(--rv-prayer-size)' }}>
           {children}
         </div>
       </div>
