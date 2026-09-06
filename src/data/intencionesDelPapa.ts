@@ -28,7 +28,15 @@ export const PADRE_NUESTRO_TEXT =
   'Amén'
 
 export const AVE_MARIA_TEXT =
-  'Dios te salve, María, llena eres de gracia, el Señor es contigo; bendita tú eres entre todas las mujeres, y bendito es el fruto de tu vientre, Jesús. Santa María, Madre de Dios, ruega por nosotros, pecadores, ahora y en la hora de nuestra muerte. Amén.'
+  'Dios te salve, María,\n' +
+  'llena eres de gracia,\n' +
+  'el Señor es contigo;\n' +
+  'bendita tú eres entre todas las mujeres,\n' +
+  'y bendito es el fruto de tu vientre, Jesús.\n\n' +
+  'Santa María, Madre de Dios,\n' +
+  'ruega por nosotros, pecadores,\n' +
+  'ahora y en la hora de nuestra muerte.\n\n' +
+  'Amén.'
 
 export const GLORIA_TEXT =
   'Gloria al Padre, y al Hijo, y al Espíritu\n' +
@@ -51,7 +59,14 @@ export const PATER_NOSTER_TEXT =
   'Amen'
 
 export const AVE_MARIA_LATIN_TEXT =
-  'Ave María, grátia plena, Dóminus tecum; benedícta tu in muliéribus, et benedíctus fructus ventris tui, Iesus. Sancta María, Mater Dei, ora pro nobis peccatóribus, nunc et in hora mortis nostræ. Amen.'
+  'Ave María, grátia plena,\n' +
+  'Dóminus tecum;\n' +
+  'benedícta tu in muliéribus,\n' +
+  'et benedíctus fructus ventris tui, Iesus.\n\n' +
+  'Sancta María, Mater Dei,\n' +
+  'ora pro nobis peccatóribus,\n' +
+  'nunc et in hora mortis nostræ.\n\n' +
+  'Amen.'
 
 export const GLORIA_LATIN_TEXT =
   'Glória Patri, et Fílio, et Spirítui\n' +
@@ -86,7 +101,14 @@ export const OUR_FATHER_EN_TEXT =
   'Amen'
 
 export const HAIL_MARY_EN_TEXT =
-  'Hail Mary, full of grace, the Lord is with thee; blessed art thou among women, and blessed is the fruit of thy womb, Jesus. Holy Mary, Mother of God, pray for us sinners, now and at the hour of our death. Amen.'
+  'Hail Mary, full of grace,\n' +
+  'the Lord is with thee;\n' +
+  'blessed art thou among women,\n' +
+  'and blessed is the fruit of thy womb, Jesus.\n\n' +
+  'Holy Mary, Mother of God,\n' +
+  'pray for us sinners,\n' +
+  'now and at the hour of our death.\n\n' +
+  'Amen.'
 
 export const GLORY_BE_EN_TEXT =
   'Glory be to the Father,\n' +

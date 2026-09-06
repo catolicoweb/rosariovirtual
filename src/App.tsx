@@ -4,6 +4,7 @@ import AppShell from './components/AppShell'
 import BeadTrail from './components/BeadTrail'
 import PrayerCard from './components/PrayerCard'
 import RosaryRail from './components/RosaryRail'
+import { RosaryProgress, type BeadState } from './components/RosaryProgress'
 import Splash from './components/Splash'
 import cruzPng from './assets/cruz.png'
 import banderaVaticanoJpg from './assets/bandera-vaticano.jpg'
@@ -37,7 +38,7 @@ import divinaMisericordiaFlagelacionJpg from './assets/divinamicericordia-flagel
 import divinaMisericordiaCoronacionJpg from './assets/divinamicericordia-coronacion.jpg'
 import divinaMisericordiaCruzCuestasJpg from './assets/divinamicericordia-cruzcuestas.jpg'
 import divinaMisericordiaCruzJpg from './assets/divinamicericordia-cruz.jpg'
-import { getMysteryOfDay, MYSTERIES, MYSTERY_NAMES, MYSTERY_DESCRIPTIONS, type MysteryId } from './data/mystery'
+import { getMysteryOfDay, MYSTERIES, MYSTERY_NAMES, type MysteryId } from './data/mystery'
 import { steps } from './data/prayerSteps'
 import { AVE_MARIA_TEXT, AVE_MARIA_LATIN_TEXT, PATER_NOSTER_TEXT, GLORIA_LATIN_TEXT, SIGNUM_CRUCIS_PARAGRAPHS, CREDO_LATIN_PARAGRAPHS, OUR_FATHER_EN_TEXT, HAIL_MARY_EN_TEXT, GLORY_BE_EN_TEXT, SIGN_OF_CROSS_EN_PARAGRAPHS, APOSTLES_CREED_EN_PARAGRAPHS } from './data/intencionesDelPapa'
 import { letaniasVirgen } from './data/letaniasVirgen'
@@ -368,6 +369,11 @@ export default function App() {
   const [isFadingOut, setIsFadingOut] = useState(false)
   const pendingRef = useRef<Screen | null>(null)
   const timeoutRef = useRef<number | null>(null)
+  // Analytics: milestones already fired for the current rosary run (avoid duplicates on back/forward)
+  const firedMilestonesRef = useRef<Set<string>>(new Set())
+  const includedLitanyRef = useRef<boolean>(false)
+  // Analytics: latest in-progress location, read by the abandon handler on tab hide
+  const abandonInfoRef = useRef<{ step: string; mystery: string } | null>(null)
   const [showPrayerExpanded, setShowPrayerExpanded] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false
     try {
@@ -520,6 +526,35 @@ export default function App() {
     return () => window.removeEventListener('popstate', handler)
   }, [])
 
+  // Analytics: keep the latest in-progress location so the abandon handler can report it
+  useEffect(() => {
+    if (screen.kind === 'step') {
+      abandonInfoRef.current = {
+        step: activeSteps[screen.stepIndex]?.id ?? String(screen.stepIndex),
+        mystery: mystery.label,
+      }
+    } else if (screen.kind === 'standalone') {
+      abandonInfoRef.current = {
+        step: `${screen.prayerId}:${screen.stepIndex}`,
+        mystery: screen.prayerId,
+      }
+    } else {
+      abandonInfoRef.current = null
+    }
+  }, [screen, activeSteps, mystery.label])
+
+  // Analytics: report where the user left when the tab is hidden/closed mid-prayer
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState !== 'hidden') return
+      const info = abandonInfoRef.current
+      if (!info) return
+      trackEvent('rosary_abandon', { step: info.step, mystery_name: info.mystery })
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => document.removeEventListener('visibilitychange', onVisibility)
+  }, [])
+
   function trackEvent(name: string, params: Record<string, string | number>) {
     if (typeof gtag === 'function') {
       gtag('event', name, params)
@@ -634,7 +669,6 @@ export default function App() {
       }
       const nextStepIndex = prev.stepIndex + 1
       if (nextStepIndex >= activeSteps.length) {
-        trackEvent('rosary_complete', { type: 'santo_rosario', mystery_name: mystery.label })
         return { kind: 'done' }
       }
       return { kind: 'step', stepIndex: nextStepIndex, sequenceIndex: 0 }
@@ -642,7 +676,6 @@ export default function App() {
 
     const nextStepIndex = prev.stepIndex + 1
     if (nextStepIndex >= activeSteps.length) {
-      trackEvent('rosary_complete', { type: 'santo_rosario', mystery_name: mystery.label })
       return { kind: 'done' }
     }
     return { kind: 'step', stepIndex: nextStepIndex, sequenceIndex: 0 }
@@ -684,10 +717,37 @@ export default function App() {
     if (pendingRef.current || isFadingOut) return
 
     if (screen.kind === 'splash') {
+      firedMilestonesRef.current.clear()
+      includedLitanyRef.current = false
       if (next.kind === 'step') {
         trackEvent('rosary_start', { type: 'santo_rosario', mystery_name: mystery.label })
       } else if (next.kind === 'standalone' && next.prayerId === 'divina-misericordia') {
         trackEvent('rosary_start', { type: 'coronilla', mystery_name: 'Coronilla de la Divina Misericordia' })
+      }
+    }
+
+    // Santo Rosario milestones — fired on arrival so they don't depend on a final tap
+    if (next.kind === 'step') {
+      const nextId = activeSteps[next.stepIndex]?.id
+      const fireOnce = (key: string, name: string, params: Record<string, string | number>) => {
+        if (firedMilestonesRef.current.has(key)) return
+        firedMilestonesRef.current.add(key)
+        trackEvent(name, params)
+      }
+      if (nextId === 'la-salve') {
+        // The 5th mystery just finished — the meaningful "prayed the rosary" milestone
+        fireOnce('mysteries', 'rosary_mysteries_complete', { mystery_name: mystery.label })
+      } else if (nextId === 'antes-de-finalizar') {
+        fireOnce('closing', 'rosary_reached_closing', { mystery_name: mystery.label })
+      } else if (nextId === 'letanias') {
+        includedLitanyRef.current = true
+        fireOnce('litany', 'rosary_closing_choice', { choice: 'litania', mystery_name: mystery.label })
+      } else if (nextId === 'cierre-final') {
+        fireOnce('complete', 'rosary_complete', {
+          type: 'santo_rosario',
+          mystery_name: mystery.label,
+          included_litany: includedLitanyRef.current ? 'yes' : 'no',
+        })
       }
     }
 
@@ -711,6 +771,8 @@ export default function App() {
     pendingRef.current = null
     if (timeoutRef.current) window.clearTimeout(timeoutRef.current)
     setIsFadingOut(false)
+    firedMilestonesRef.current.clear()
+    includedLitanyRef.current = false
     setScreen({ kind: 'splash' })
   }
 
@@ -794,6 +856,7 @@ export default function App() {
       item?.id === 'padre-nuestro' ? (idioma === 'en' ? 'Our Father' : 'Padre Nuestro') :
       item?.id?.startsWith('avemaria-') ? (idioma === 'en' ? 'Hail Mary' : 'Ave María') :
       item?.id === 'gloria' ? (idioma === 'en' ? 'Glory Be' : 'Gloria al Padre') :
+      item?.id?.startsWith('letania') ? (idioma === 'en' ? 'Litany of the Virgin Mary' : 'Letanías a la Virgen María') :
       (item?.id ?? '')
 
     // Meditation text (avemaria beads inside mystery decades only)
@@ -839,13 +902,60 @@ export default function App() {
   })()
 
   // Mystery progress for the right column dots
-  function getMysteryBeadProgress(decadeIdx: number) {
-    const stepIdx = decadeIdx + 3
-    if (screen.kind !== 'step') return { done: 0, active: -1 }
-    if (screen.stepIndex < stepIdx) return { done: 0, active: -1 }
-    if (screen.stepIndex > stepIdx) return { done: 12, active: -1 }
-    return { done: screen.sequenceIndex, active: screen.sequenceIndex }
-  }
+  // Fill model for the desktop rosary graphic (Col 3).
+  // Loop = 5 decades × [1 Our Father (index %11===0) + 10 Hail Mary]. A decade maps
+  // to step 3..7 with sequenceIndex 0..11 (0 = Our Father, 1..10 = Hail Mary, 11 = Glory).
+  const rosaryModel = (() => {
+    const loop: BeadState[] = Array(55).fill('todo')
+
+    if (screen.kind === 'done') {
+      loop.fill('done')
+    } else if (screen.kind === 'step') {
+      for (let di = 0; di < 5; di++) {
+        const stepIdx = di + 3
+        const base = di * 11
+        if (screen.stepIndex > stepIdx) {
+          for (let k = 0; k < 11; k++) loop[base + k] = 'done'
+        } else if (screen.stepIndex === stepIdx) {
+          const s = screen.sequenceIndex
+          loop[base] = s >= 1 ? 'done' : 'active' // Our Father
+          for (let j = 1; j <= 10; j++) {
+            loop[base + j] = s > j ? 'done' : s === j ? 'active' : 'todo'
+          }
+        }
+      }
+    }
+
+    // Pendant fills upward from the cross, matching the opening prayers:
+    //   Cross      = Credo            → step 1
+    //   Our Father = intenciones seq 0 (large bead next to the cross)
+    //   3 Ave María= intenciones seq 1,2,3
+    //   Medal      = Gloria, seq 4
+    // Everything (including the cross) starts as outline during the Sign of the Cross (step 0).
+    // tail is ordered top→bottom: [small, small, small, largeOurFather(nearest cross)]
+    let cross: BeadState = 'todo'
+    const tail: BeadState[] = ['todo', 'todo', 'todo', 'todo']
+    let medal: BeadState = 'todo'
+
+    if (screen.kind === 'done') {
+      cross = 'done'; tail[0] = tail[1] = tail[2] = tail[3] = 'done'; medal = 'done'
+    } else if (screen.kind === 'step') {
+      const si = screen.stepIndex
+      if (si >= 1) cross = 'done' // Credo onward
+      if (si > 2) {
+        tail[0] = tail[1] = tail[2] = tail[3] = 'done'; medal = 'done'
+      } else if (si === 2) {
+        const s = screen.sequenceIndex // 0=Our Father, 1..3=Ave María, 4=Gloria
+        tail[3] = 'done'                          // Our Father (nearest cross)
+        tail[2] = s >= 1 ? 'done' : 'todo'
+        tail[1] = s >= 2 ? 'done' : 'todo'
+        tail[0] = s >= 3 ? 'done' : 'todo'
+        medal = s >= 4 ? 'done' : 'todo'
+      }
+    }
+
+    return { loop, medal, tail, cross }
+  })()
 
   const coverImgSrc = {
     gloriosos: misteriosGloriososJpg,
@@ -950,19 +1060,14 @@ export default function App() {
               {idioma === 'en' ? mysteryLabelEn : mystery.label}
             </h1>
 
-            {/* Description */}
-            <p className="max-w-[500px] text-justify text-[16px] leading-relaxed text-[var(--rv-ink-muted)]">
-              {MYSTERY_DESCRIPTIONS[mystery.id][idioma]}
-            </p>
-
             {/* 5-mystery columns */}
             <div className="flex divide-x divide-[var(--rv-border)] border-b border-t border-[var(--rv-border)]">
               {MYSTERY_NAMES[mystery.id][idioma].map((name, i) => (
-                <div key={i} className="flex-1 px-4 py-4 first:pl-0">
-                  <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#b2985f]">
+                <div key={i} className="flex-1 px-5 py-6 first:pl-0">
+                  <div className="mb-2.5 text-[13px] font-semibold uppercase tracking-[0.12em] text-[#b2985f]">
                     {['I', 'II', 'III', 'IV', 'V'][i]}
                   </div>
-                  <div className="text-[14px] leading-snug">{name}</div>
+                  <div className="text-[20px] leading-snug">{name}</div>
                 </div>
               ))}
             </div>
@@ -972,7 +1077,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={advance}
-                className="border border-[#b2985f] px-10 py-3.5 text-[12px] font-semibold uppercase tracking-[0.14em] text-[#b2985f] transition-colors hover:bg-[rgba(178,152,95,0.08)]"
+                className="border border-[#b2985f] bg-[#b2985f] px-10 py-3.5 text-[12px] font-semibold uppercase tracking-[0.14em] text-white transition-colors hover:bg-[#a08850]"
               >
                 {idioma === 'en' ? 'Begin' : 'Comenzar'}
               </button>
@@ -990,6 +1095,52 @@ export default function App() {
       </div>
     ) : null}
 
+    {/* ── Desktop End Layout ──────────────────────────────────── */}
+    {screen.kind === 'done' ? (
+      <div className="fixed inset-0 z-30 hidden flex-col bg-[var(--rv-paper)] md:flex">
+        {/* Top bar */}
+        <div className="flex flex-shrink-0 items-center justify-between border-b border-[var(--rv-border)] px-8 py-3">
+          <div className="flex items-center gap-3">
+            <span className="text-[20px] font-semibold text-[#b2985f]">Rosario Virtual</span>
+            <span className="text-[var(--rv-border)]">|</span>
+            <span className="text-[20px] text-[var(--rv-ink-muted)]">
+              {idioma === 'en' ? mysteryLabelEn : mystery.label}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setGlobalMenuOpen(true)}
+            className="border border-[var(--rv-ink)] px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.10em] hover:bg-[rgba(26,26,26,0.05)]"
+          >
+            {idioma === 'en' ? 'Menu' : 'Menú'}
+          </button>
+        </div>
+
+        {/* Centred closing message */}
+        <div className="flex flex-1 flex-col items-center justify-center px-12 text-center">
+          <img src={cruzPng} alt="" draggable={false} className="mb-10 h-[180px] w-auto object-contain opacity-90" />
+          <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#b2985f]">
+            {idioma === 'en' ? mysteryLabelEn : mystery.label}
+          </p>
+          <h1 className="mb-6 text-[62px] font-medium leading-[1.05] tracking-[-0.01em]">
+            {idioma === 'en' ? 'The End' : 'Fin'}
+          </h1>
+          <p className="mb-12 max-w-[520px] text-[22px] leading-relaxed text-[var(--rv-ink-muted)]">
+            {idioma === 'en'
+              ? 'May the Lord grant you perseverance and peace.'
+              : 'Que el Señor te conceda perseverancia y paz.'}
+          </p>
+          <button
+            type="button"
+            onClick={restart}
+            className="border border-[#b2985f] bg-[#b2985f] px-10 py-3.5 text-[12px] font-semibold uppercase tracking-[0.14em] text-white transition-colors hover:bg-[#a08850]"
+          >
+            {idioma === 'en' ? 'Back to start' : 'Volver al inicio'}
+          </button>
+        </div>
+      </div>
+    ) : null}
+
     {/* ── Desktop Step Layout (3 columns) ─────────────────────── */}
     {screen.kind === 'step' ? (
       <div className="fixed inset-0 z-30 hidden flex-col bg-[var(--rv-paper)] md:flex">
@@ -998,13 +1149,11 @@ export default function App() {
         <div className="flex flex-shrink-0 items-center justify-between border-b border-[var(--rv-border)] px-8 py-3">
           <div className="flex items-center gap-3">
             <span className="text-[20px] font-semibold text-[#b2985f]">
-              {idioma === 'en' ? 'The Holy Rosary' : 'El Santo Rosario'}
+              Rosario Virtual
             </span>
             <span className="text-[var(--rv-border)]">|</span>
             <span className="text-[20px] text-[var(--rv-ink-muted)]">
               {idioma === 'en' ? mysteryLabelEn : mystery.label}
-              {' · '}
-              {desktopSectionLabel}
             </span>
           </div>
           <div className="flex items-center gap-4">
@@ -1029,13 +1178,22 @@ export default function App() {
           {/* ── Col 1: Context panel (mystery image + section steps) ── */}
           <div className="flex w-[340px] flex-shrink-0 flex-col overflow-y-auto border-r border-[var(--rv-border)]">
             <div className="p-6 pb-4">
-              <img
-                src={desktopContextImage}
-                alt=""
-                draggable={false}
-                className="w-full rounded border border-[var(--rv-border)] object-cover"
-                style={{ maxHeight: '260px', objectPosition: 'center top' }}
-              />
+              {desktopContextImage === cruzPng ? (
+                <img
+                  src={desktopContextImage}
+                  alt=""
+                  draggable={false}
+                  className="mx-auto h-[260px] w-auto max-w-full object-contain"
+                />
+              ) : (
+                <img
+                  src={desktopContextImage}
+                  alt=""
+                  draggable={false}
+                  className="w-full rounded border border-[var(--rv-border)] object-cover"
+                  style={{ maxHeight: '260px', objectPosition: 'center top' }}
+                />
+              )}
             </div>
             <div className="px-6 pt-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#b2985f]">
               {desktopSectionLabel}
@@ -1043,18 +1201,19 @@ export default function App() {
             {/* High-level section navigation */}
             <div className="mt-2 flex-1 px-6 pb-6">
               {[
-                { label: idioma === 'en' ? 'Opening' : 'Inicio', range: [0, 2] as [number, number] },
-                { label: MYSTERY_NAMES[mystery.id][idioma][0], range: [3, 3] as [number, number] },
-                { label: MYSTERY_NAMES[mystery.id][idioma][1], range: [4, 4] as [number, number] },
-                { label: MYSTERY_NAMES[mystery.id][idioma][2], range: [5, 5] as [number, number] },
-                { label: MYSTERY_NAMES[mystery.id][idioma][3], range: [6, 6] as [number, number] },
-                { label: MYSTERY_NAMES[mystery.id][idioma][4], range: [7, 7] as [number, number] },
-                { label: idioma === 'en' ? 'Closing' : 'Cierre', range: [8, 11] as [number, number] },
+                { label: idioma === 'en' ? 'Opening' : 'Inicio', num: null, range: [0, 1] as [number, number] },
+                { label: idioma === 'en' ? "Pope's Intentions" : 'Intenciones del Papa', num: null, range: [2, 2] as [number, number] },
+                { label: MYSTERY_NAMES[mystery.id][idioma][0], num: 'I', range: [3, 3] as [number, number] },
+                { label: MYSTERY_NAMES[mystery.id][idioma][1], num: 'II', range: [4, 4] as [number, number] },
+                { label: MYSTERY_NAMES[mystery.id][idioma][2], num: 'III', range: [5, 5] as [number, number] },
+                { label: MYSTERY_NAMES[mystery.id][idioma][3], num: 'IV', range: [6, 6] as [number, number] },
+                { label: MYSTERY_NAMES[mystery.id][idioma][4], num: 'V', range: [7, 7] as [number, number] },
+                { label: idioma === 'en' ? 'Closing' : 'Cierre', num: null, range: [8, 11] as [number, number] },
               ].map((section, i) => {
                 const si = screen.kind === 'step' ? screen.stepIndex : -1
                 const isCurrent = si >= section.range[0] && si <= section.range[1]
                 const isDone = si > section.range[1]
-                const num = i === 0 ? null : i <= 5 ? ['I','II','III','IV','V'][i - 1] : null
+                const num = section.num
                 return (
                   <div
                     key={i}
@@ -1132,25 +1291,43 @@ export default function App() {
                   )}
                 </>
               ) : desktopCenterContent?.kind === 'sequence' ? (
-                <div className="max-w-2xl">
-                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--rv-ink-muted)]">
-                    {desktopSectionLabel} · {desktopCenterContent.sequenceTitle}
-                  </p>
-                  <h2 className="mb-6 text-[42px] font-medium leading-tight">
-                    {desktopCenterContent.prayerName}
-                  </h2>
-                  <hr className="mb-8 border-[var(--rv-border)]" />
-                  {desktopCenterContent.meditationText ? (
-                    <p className="mb-8 whitespace-pre-line text-left text-[26px] italic leading-relaxed text-[var(--rv-ink)]">
+                desktopCenterContent.meditationText ? (
+                  /* Contemplation-first: the mystery meditation is the focus, the
+                     Hail Mary prayer supports it underneath */
+                  <div className="max-w-2xl">
+                    <p className="mb-7 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#b2985f]">
+                      {desktopSectionLabel} · {desktopCenterContent.sequenceTitle}
+                    </p>
+                    <p className="whitespace-pre-line text-[38px] font-medium italic leading-[1.28] text-[var(--rv-ink)]">
                       {desktopCenterContent.meditationText}
                     </p>
-                  ) : null}
-                  {desktopCenterContent.text.split('\n\n').filter(Boolean).map((p, i) => (
-                    <p key={i} className="mb-5 text-justify text-[20px] leading-relaxed whitespace-pre-line">
-                      {p}
+                    <hr className="my-9 border-[var(--rv-border)]" />
+                    <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--rv-ink-muted)]">
+                      {desktopCenterContent.prayerName}
                     </p>
-                  ))}
-                </div>
+                    {desktopCenterContent.text.split('\n\n').filter(Boolean).map((p, i) => (
+                      <p key={i} className="mb-5 whitespace-pre-line text-justify text-[20px] leading-relaxed text-[var(--rv-ink-muted)]">
+                        {p}
+                      </p>
+                    ))}
+                  </div>
+                ) : (
+                  /* Prayer-first: Our Father, Glory Be, or meditations turned off */
+                  <div className="max-w-2xl">
+                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--rv-ink-muted)]">
+                      {desktopSectionLabel} · {desktopCenterContent.sequenceTitle}
+                    </p>
+                    <h2 className="mb-6 text-[42px] font-medium leading-tight">
+                      {desktopCenterContent.prayerName}
+                    </h2>
+                    <hr className="mb-8 border-[var(--rv-border)]" />
+                    {desktopCenterContent.text.split('\n\n').filter(Boolean).map((p, i) => (
+                      <p key={i} className="mb-5 whitespace-pre-line text-justify text-[20px] leading-relaxed">
+                        {p}
+                      </p>
+                    ))}
+                  </div>
+                )
               ) : null}
 
             </motion.div>
@@ -1167,7 +1344,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={advance}
-                className="flex items-center gap-2 border border-[#b2985f] px-6 py-2.5 text-[12px] font-semibold uppercase tracking-[0.10em] text-[#b2985f] hover:bg-[rgba(178,152,95,0.08)]"
+                className="flex items-center gap-2 border border-[#b2985f] bg-[#b2985f] px-6 py-2.5 text-[12px] font-semibold uppercase tracking-[0.10em] text-white hover:bg-[#a08850]"
               >
                 {idioma === 'en' ? 'Continue' : 'Continuar'} →
               </button>
@@ -1177,72 +1354,14 @@ export default function App() {
             </div>
           </div>
 
-          {/* ── Col 3: Mysteries overview with bead dots ──────────── */}
-          <div className="flex w-[340px] flex-shrink-0 flex-col overflow-y-auto border-l border-[var(--rv-border)] px-6 py-5">
-            {/* Opening mini-row */}
-            <div className="mb-5">
-              <div className={`mb-1 text-[10px] font-semibold uppercase tracking-[0.12em] ${screen.stepIndex <= 2 ? 'text-[#b2985f]' : 'text-[var(--rv-ink-muted)]'}`}>
-                {idioma === 'en' ? 'Opening' : 'Inicio'}
-              </div>
-              <div className="flex gap-1">
-                {[0, 1, 2].map(si => (
-                  <div
-                    key={si}
-                    className={`h-2 w-2 rounded-full border ${
-                      screen.stepIndex > si ? 'border-[#b2985f] bg-[#b2985f]' :
-                      screen.stepIndex === si ? 'border-[#b2985f] bg-[rgba(178,152,95,0.4)]' :
-                      'border-[var(--rv-ink-muted)] opacity-30'
-                    }`}
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* 5 mysteries with bead dots */}
-            {MYSTERY_NAMES[mystery.id][idioma].map((name, di) => {
-              const { done, active } = getMysteryBeadProgress(di)
-              return (
-                <div key={di} className="mb-5">
-                  <div className="mb-0.5 text-[11px] font-semibold text-[#b2985f]">
-                    {['I', 'II', 'III', 'IV', 'V'][di]}
-                  </div>
-                  <div className={`mb-2 text-[13px] leading-snug ${screen.stepIndex === di + 3 ? 'font-medium' : 'text-[var(--rv-ink-muted)]'}`}>
-                    {name}
-                  </div>
-                  <div className="flex flex-wrap gap-1">
-                    {Array.from({ length: 12 }, (_, j) => (
-                      <div
-                        key={j}
-                        className={`h-2.5 w-2.5 rounded-full border ${
-                          j < done ? 'border-[#b2985f] bg-[#b2985f]' :
-                          j === active ? 'border-[#b2985f] bg-[rgba(178,152,95,0.4)]' :
-                          'border-[rgba(26,26,26,0.2)]'
-                        }`}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )
-            })}
-
-            {/* Closing */}
-            <div className="mt-1">
-              <div className={`mb-1 text-[10px] font-semibold uppercase tracking-[0.12em] ${screen.stepIndex >= 8 ? 'text-[#b2985f]' : 'text-[var(--rv-ink-muted)]'}`}>
-                {idioma === 'en' ? 'Closing' : 'Cierre'}
-              </div>
-              <div className="flex gap-1">
-                {[8, 9, 10, 11].map(si => (
-                  <div
-                    key={si}
-                    className={`h-2 w-2 rounded-full border ${
-                      screen.stepIndex > si ? 'border-[#b2985f] bg-[#b2985f]' :
-                      screen.stepIndex === si ? 'border-[#b2985f] bg-[rgba(178,152,95,0.4)]' :
-                      'border-[var(--rv-ink-muted)] opacity-30'
-                    }`}
-                  />
-                ))}
-              </div>
-            </div>
+          {/* ── Col 3: Rosary progress graphic ────────────────────── */}
+          <div className="flex w-[400px] flex-shrink-0 flex-col overflow-y-auto border-l border-[var(--rv-border)] px-8 py-8">
+            <RosaryProgress
+              loop={rosaryModel.loop}
+              medal={rosaryModel.medal}
+              tail={rosaryModel.tail}
+              cross={rosaryModel.cross}
+            />
           </div>
 
         </div>
@@ -1719,7 +1838,7 @@ export default function App() {
                               <>
                                 <div className="my-3 border-t border-[rgba(178,152,95,0.2)]" />
                                 <div className="[font-size:var(--rv-prayer-size)]">
-                                  <p>{(latinPrayers ? AVE_MARIA_LATIN_TEXT : idioma === 'en' ? HAIL_MARY_EN_TEXT : AVE_MARIA_TEXT).replace(/ A[m]e[n]\.$/i, '')}</p>
+                                  <p className="whitespace-pre-line">{(latinPrayers ? AVE_MARIA_LATIN_TEXT : idioma === 'en' ? HAIL_MARY_EN_TEXT : AVE_MARIA_TEXT).replace(/\s*Am[eé]n\.?$/i, '')}</p>
                                   <p className="text-right mt-1">{latinPrayers || idioma === 'en' ? 'Amen.' : 'Amén.'}</p>
                                 </div>
                               </>
@@ -1853,8 +1972,8 @@ export default function App() {
                     onAdvance={advance}
                   menuSlot={inCardHamburger}
                   >
-                    <p className="[font-size:var(--rv-prayer-size)]">
-                      {(latinPrayers ? AVE_MARIA_LATIN_TEXT : idioma === 'en' ? HAIL_MARY_EN_TEXT : AVE_MARIA_TEXT).replace(/ A[m]e[n]\.$/i, '')}
+                    <p className="whitespace-pre-line [font-size:var(--rv-prayer-size)]">
+                      {(latinPrayers ? AVE_MARIA_LATIN_TEXT : idioma === 'en' ? HAIL_MARY_EN_TEXT : AVE_MARIA_TEXT).replace(/\s*Am[eé]n\.?$/i, '')}
                     </p>
                     <p className="text-right [font-size:var(--rv-prayer-size)]">{latinPrayers || idioma === 'en' ? 'Amen.' : 'Amén.'}</p>
                   </PrayerCard>
@@ -2023,11 +2142,17 @@ export default function App() {
         </button>
       ) : null}
 
-      {/* Global full-viewport drawer */}
+      {/* Global menu — full-viewport drawer on mobile, dropdown popover on desktop */}
       {globalMenuOpen ? (
-        <div className="fixed inset-0 z-50 flex flex-col bg-white">
+        <>
+          {/* Desktop click-outside backdrop */}
+          <div
+            className="fixed inset-0 z-40 hidden md:block"
+            onClick={() => setGlobalMenuOpen(false)}
+          />
+          <div className="fixed inset-0 z-50 flex flex-col bg-white md:inset-auto md:right-8 md:top-14 md:max-h-[calc(100vh-5rem)] md:w-[400px] md:overflow-hidden md:rounded-xl md:border md:border-[var(--rv-border)] md:shadow-2xl">
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-[var(--rv-border)] px-5 pb-4 pt-10">
+          <div className="flex items-center justify-between border-b border-[var(--rv-border)] px-5 pb-4 pt-10 md:pt-4">
             <span className="text-xl font-semibold text-[var(--rv-ink)]">
               {idioma === 'en' ? 'Menu' : 'Menú'}
             </span>
@@ -2213,9 +2338,10 @@ export default function App() {
 
           </div>
         </div>
+        </>
       ) : null}
 
-      <div className={`fixed bottom-0 left-0 right-0${(screen.kind === 'splash' || screen.kind === 'step') ? ' md:hidden' : ''}`}>
+      <div className={`fixed bottom-0 left-0 right-0${(screen.kind === 'splash' || screen.kind === 'step' || screen.kind === 'done') ? ' md:hidden' : ''}`}>
         <div className="w-full rounded-t-3xl border-t border-[rgba(26,26,26,0.10)] bg-white/90 shadow-2xl backdrop-blur">
           <div
             className="mx-auto w-full max-w-xl px-5 pt-5"
