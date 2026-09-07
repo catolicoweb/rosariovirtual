@@ -44,6 +44,27 @@ export const GLORIA_TEXT =
   'y siempre, por los siglos de los siglos. \n' +
   'Amén'
 
+export const ORACION_FATIMA_TEXT =
+  'Oh Jesús mío,\n' +
+  'perdona nuestros pecados,\n' +
+  'líbranos del fuego del infierno,\n' +
+  'lleva al cielo a todas las almas,\n' +
+  'especialmente a las más necesitadas de tu misericordia.'
+
+export const FATIMA_PRAYER_EN_TEXT =
+  'O my Jesus,\n' +
+  'forgive us our sins,\n' +
+  'save us from the fires of hell,\n' +
+  'lead all souls to Heaven,\n' +
+  'especially those in most need of Thy mercy.'
+
+export const ORATIO_FATIMAE_LATIN_TEXT =
+  'O mi Iesu,\n' +
+  'dimitte nobis debita nostra,\n' +
+  'libera nos ab igne inferni,\n' +
+  'conduc in caelum omnes animas,\n' +
+  'praesertim illas quae maxime indigent misericordia tua.'
+
 export const PATER_NOSTER_TEXT =
   'Pater noster,\n' +
   'qui es in cælis,\n' +

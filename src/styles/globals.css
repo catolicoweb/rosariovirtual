@@ -30,3 +30,28 @@ body {
   filter: drop-shadow(0 0 10px rgba(181, 155, 97, 0.55))
     drop-shadow(0 0 22px rgba(181, 155, 97, 0.25));
 }
+
+@keyframes rv-halo {
+  0%, 100% { opacity: 0.18; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.35); }
+}
+
+@keyframes rv-sway {
+  0%, 100% { transform: rotate(-0.9deg) translateY(0); }
+  50% { transform: rotate(1.1deg) translateY(4px); }
+}
+
+.rv-rosary-sway {
+  animation: rv-sway 11s ease-in-out infinite;
+  transform-box: view-box;
+}
+
+.rv-bead-halo {
+  animation: rv-halo 2.4s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rv-rosary-sway, .rv-bead-halo { animation: none; }
+}

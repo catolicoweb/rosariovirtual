@@ -2,6 +2,7 @@ import {
   AVE_MARIA_TEXT,
   GLORIA_TEXT,
   intencionesDelPapa,
+  ORACION_FATIMA_TEXT,
   PADRE_NUESTRO_TEXT,
   type SequenceConfig,
 } from './intencionesDelPapa'
@@ -33,6 +34,7 @@ const primerMisterioDecada: SequenceConfig = {
       text: AVE_MARIA_TEXT,
     })),
     { id: 'gloria', bead: 'large', text: GLORIA_TEXT },
+    { id: 'fatima', text: ORACION_FATIMA_TEXT },
   ],
 }
 
@@ -47,6 +49,7 @@ const segundoMisterioDecada: SequenceConfig = {
       text: AVE_MARIA_TEXT,
     })),
     { id: 'gloria', bead: 'large', text: GLORIA_TEXT },
+    { id: 'fatima', text: ORACION_FATIMA_TEXT },
   ],
 }
 
@@ -61,6 +64,7 @@ const tercerMisterioDecada: SequenceConfig = {
       text: AVE_MARIA_TEXT,
     })),
     { id: 'gloria', bead: 'large', text: GLORIA_TEXT },
+    { id: 'fatima', text: ORACION_FATIMA_TEXT },
   ],
 }
 
@@ -75,6 +79,7 @@ const cuartoMisterioDecada: SequenceConfig = {
       text: AVE_MARIA_TEXT,
     })),
     { id: 'gloria', bead: 'large', text: GLORIA_TEXT },
+    { id: 'fatima', text: ORACION_FATIMA_TEXT },
   ],
 }
 
@@ -89,6 +94,7 @@ const quintoMisterioDecada: SequenceConfig = {
       text: AVE_MARIA_TEXT,
     })),
     { id: 'gloria', bead: 'large', text: GLORIA_TEXT },
+    { id: 'fatima', text: ORACION_FATIMA_TEXT },
   ],
 }
 

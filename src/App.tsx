@@ -40,7 +40,7 @@ import divinaMisericordiaCruzCuestasJpg from './assets/divinamicericordia-cruzcu
 import divinaMisericordiaCruzJpg from './assets/divinamicericordia-cruz.jpg'
 import { getMysteryOfDay, MYSTERIES, MYSTERY_NAMES, type MysteryId } from './data/mystery'
 import { steps } from './data/prayerSteps'
-import { AVE_MARIA_TEXT, AVE_MARIA_LATIN_TEXT, PATER_NOSTER_TEXT, GLORIA_LATIN_TEXT, SIGNUM_CRUCIS_PARAGRAPHS, CREDO_LATIN_PARAGRAPHS, OUR_FATHER_EN_TEXT, HAIL_MARY_EN_TEXT, GLORY_BE_EN_TEXT, SIGN_OF_CROSS_EN_PARAGRAPHS, APOSTLES_CREED_EN_PARAGRAPHS } from './data/intencionesDelPapa'
+import { AVE_MARIA_TEXT, AVE_MARIA_LATIN_TEXT, PATER_NOSTER_TEXT, GLORIA_LATIN_TEXT, SIGNUM_CRUCIS_PARAGRAPHS, CREDO_LATIN_PARAGRAPHS, OUR_FATHER_EN_TEXT, HAIL_MARY_EN_TEXT, GLORY_BE_EN_TEXT, SIGN_OF_CROSS_EN_PARAGRAPHS, APOSTLES_CREED_EN_PARAGRAPHS, ORATIO_FATIMAE_LATIN_TEXT, FATIMA_PRAYER_EN_TEXT } from './data/intencionesDelPapa'
 import { letaniasVirgen } from './data/letaniasVirgen'
 import { letaniasVirgenEn } from './data/letaniasVirgenEn'
 import {
@@ -472,12 +472,14 @@ export default function App() {
       if (itemId === 'padre-nuestro') return PATER_NOSTER_TEXT
       if (itemId.startsWith('avemaria-')) return AVE_MARIA_LATIN_TEXT
       if (itemId === 'gloria') return GLORIA_LATIN_TEXT
+      if (itemId === 'fatima') return ORATIO_FATIMAE_LATIN_TEXT
       return originalText
     }
     if (idioma === 'en') {
       if (itemId === 'padre-nuestro') return OUR_FATHER_EN_TEXT
       if (itemId.startsWith('avemaria-')) return HAIL_MARY_EN_TEXT
       if (itemId === 'gloria') return GLORY_BE_EN_TEXT
+      if (itemId === 'fatima') return FATIMA_PRAYER_EN_TEXT
       return originalText
     }
     return originalText
@@ -586,11 +588,13 @@ export default function App() {
     if (!step) return null
 
     if (step.kind === 'sequence') {
+      // The Fatima prayer is said on the chain, not on a bead — keep it out of the trail
+      const beadItems = step.sequence.items.filter((i) => i.id !== 'fatima')
       return {
-        total: step.sequence.items.length,
-        completed: screen.sequenceIndex,
-        currentIndex: screen.sequenceIndex,
-        beadKinds: step.sequence.items.map((i) => i.bead ?? 'normal'),
+        total: beadItems.length,
+        completed: Math.min(screen.sequenceIndex, beadItems.length),
+        currentIndex: Math.min(screen.sequenceIndex, beadItems.length - 1),
+        beadKinds: beadItems.map((i) => i.bead ?? 'normal'),
       }
     }
 
@@ -856,6 +860,7 @@ export default function App() {
       item?.id === 'padre-nuestro' ? (idioma === 'en' ? 'Our Father' : 'Padre Nuestro') :
       item?.id?.startsWith('avemaria-') ? (idioma === 'en' ? 'Hail Mary' : 'Ave María') :
       item?.id === 'gloria' ? (idioma === 'en' ? 'Glory Be' : 'Gloria al Padre') :
+      item?.id === 'fatima' ? (idioma === 'en' ? 'Fatima Prayer' : 'Oración de Fátima') :
       item?.id?.startsWith('letania') ? (idioma === 'en' ? 'Litany of the Virgin Mary' : 'Letanías a la Virgen María') :
       (item?.id ?? '')
 
@@ -951,6 +956,35 @@ export default function App() {
         tail[1] = s >= 2 ? 'done' : 'todo'
         tail[0] = s >= 3 ? 'done' : 'todo'
         medal = s >= 4 ? 'done' : 'todo'
+      }
+    }
+
+    return { loop, medal, tail, cross }
+  })()
+
+  // Fill model for the Divine Mercy chaplet (prayed on a normal rosary).
+  // steps 4..58 map directly onto the 55 loop beads (5 × [Eternal Father + 10 beads]).
+  const dmModel = (() => {
+    const loop: BeadState[] = Array(55).fill('todo')
+    let cross: BeadState = 'todo'
+    const tail: BeadState[] = ['todo', 'todo', 'todo', 'todo']
+    let medal: BeadState = 'todo'
+
+    if (screen.kind === 'standalone' && screen.prayerId === 'divina-misericordia') {
+      const si = screen.stepIndex
+      if (si > 58) {
+        loop.fill('done')
+      } else if (si >= 4) {
+        const cur = si - 4
+        for (let k = 0; k < 55; k++) loop[k] = k < cur ? 'done' : k === cur ? 'active' : 'todo'
+      }
+      if (si >= 1) cross = 'done' // after the Sign of the Cross
+      if (si >= 4) {
+        tail[0] = tail[1] = tail[2] = tail[3] = 'done'; medal = 'done'
+      } else {
+        // opening prayers (Creed, Hail Mary, Glory Be) fill the pendant upward
+        if (si >= 2) tail[3] = 'done'
+        if (si >= 3) tail[2] = 'done'
       }
     }
 
@@ -1355,18 +1389,238 @@ export default function App() {
           </div>
 
           {/* ── Col 3: Rosary progress graphic ────────────────────── */}
-          <div className="flex w-[400px] flex-shrink-0 flex-col overflow-y-auto border-l border-[var(--rv-border)] px-8 py-8">
+          <div className="flex w-[480px] flex-shrink-0 flex-col overflow-y-auto border-l border-[var(--rv-border)] px-10 py-8">
             <RosaryProgress
               loop={rosaryModel.loop}
               medal={rosaryModel.medal}
               tail={rosaryModel.tail}
               cross={rosaryModel.cross}
+              onAdvance={advance}
+              onBack={() => navigate(computePrev(screen))}
+              centerEyebrow={idioma === 'en' ? mysteryLabelEn : mystery.label}
+              centerLabel={
+                screen.kind === 'step' && screen.stepIndex >= 3 && screen.stepIndex <= 7
+                  ? MYSTERY_NAMES[mystery.id][idioma][screen.stepIndex - 3]
+                  : undefined
+              }
             />
           </div>
 
         </div>
       </div>
     ) : null}
+
+    {/* ── Desktop Divine Mercy Layout (3 columns) ─────────────── */}
+    {screen.kind === 'standalone' && screen.prayerId === 'divina-misericordia' ? (() => {
+      const si = screen.stepIndex
+      const t = (es: string, en: string) => (idioma === 'en' ? en : es)
+      const credoEsParas =
+        (activeSteps.find((s): s is Extract<typeof s, { kind: 'text' }> => s.kind === 'text' && s.id === 'credo')?.paragraphs) ?? []
+      const decadeImages = [
+        divinaMisericordiaHuertoJpg,
+        divinaMisericordiaFlagelacionJpg,
+        divinaMisericordiaCoronacionJpg,
+        divinaMisericordiaCruzCuestasJpg,
+        divinaMisericordiaCruzJpg,
+      ]
+
+      let sectionLabel = t('Inicio', 'Opening')
+      let title = ''
+      let paras: string[] = []
+      let image = divinaMisericordiaJpg
+      let note: string | null = null
+
+      if (si === 0) {
+        title = t('Coronilla de la Divina Misericordia', 'Chaplet of Divine Mercy')
+        paras = latinPrayers ? SIGNUM_CRUCIS_PARAGRAPHS : idioma === 'en' ? SIGN_OF_CROSS_EN_PARAGRAPHS
+          : ['Por la señal de la Santa Cruz, de nuestros enemigos, líbranos Señor, Dios nuestro.', 'En el nombre del Padre, del Hijo y del Espíritu Santo. Amén.']
+      } else if (si === 1) {
+        title = latinPrayers ? 'Credo' : t('Credo', "Apostles' Creed")
+        paras = latinPrayers ? CREDO_LATIN_PARAGRAPHS : idioma === 'en' ? APOSTLES_CREED_EN_PARAGRAPHS : credoEsParas
+      } else if (si === 2) {
+        title = t('Ave María', 'Hail Mary')
+        paras = [(latinPrayers ? AVE_MARIA_LATIN_TEXT : idioma === 'en' ? HAIL_MARY_EN_TEXT : AVE_MARIA_TEXT)]
+      } else if (si === 3) {
+        title = latinPrayers ? 'Glória Patri' : t('Gloria', 'Glory Be')
+        paras = [latinPrayers ? GLORIA_LATIN_TEXT : idioma === 'en' ? GLORY_BE_EN_TEXT
+          : 'Gloria al Padre, y al Hijo, y al Espíritu Santo.\nComo era en el principio, ahora y siempre,\npor los siglos de los siglos.\n\nAmén.']
+      } else if (si >= 4 && si <= 58) {
+        const beadStep = si - 4
+        const decadeIdx = Math.floor(beadStep / 11)
+        const beadInDecade = beadStep % 11
+        sectionLabel = `${t('Decena', 'Decade')} ${['I', 'II', 'III', 'IV', 'V'][decadeIdx]}`
+        if (beadInDecade === 0) {
+          title = t('Padre Eterno', 'Eternal Father')
+          image = divinaMisericordiaJpg
+          paras = [t(
+            'Padre Eterno, te ofrezco el Cuerpo y Sangre, el Alma y la Divinidad de Tu Amadísimo Hijo y Señor Nuestro Jesucristo, en propiciación de nuestros pecados y los del mundo entero.',
+            'Eternal Father, I offer Thee the Body and Blood, Soul and Divinity of Thy dearly beloved Son, Our Lord Jesus Christ, in atonement for our sins and those of the whole world.',
+          )]
+        } else {
+          title = t('Por Su Dolorosa Pasión', 'For the Sake of His Sorrowful Passion')
+          image = decadeImages[decadeIdx]
+          note = `${beadInDecade}/10`
+          paras = [t(
+            'Por Su Dolorosa Pasión, ten misericordia de nosotros y del mundo entero.',
+            'For the sake of His sorrowful Passion, have mercy on us and on the whole world.',
+          )]
+        }
+      } else if (si >= 59 && si <= 61) {
+        sectionLabel = t('Cierre', 'Closing')
+        title = t('Santo Dios', 'Holy God')
+        note = `${si - 58}/3`
+        paras = [t(
+          'Santo Dios, Santo Fuerte, Santo Inmortal,\nten misericordia de nosotros y del mundo entero.',
+          'Holy God, Holy Mighty One, Holy Immortal One,\nhave mercy on us and on the whole world.',
+        )]
+      } else if (si === 62) {
+        sectionLabel = t('Cierre', 'Closing')
+        title = t('Oración final', 'Closing Prayer')
+        paras = [t(
+          'Oh Sangre y Agua que brotasteis del Corazón de Jesús como una fuente de misericordia para nosotros, en Vos confío.',
+          'O Blood and Water, which gushed forth from the Heart of Jesus as a fount of mercy for us, I trust in Thee.',
+        )]
+      } else {
+        sectionLabel = t('Cierre', 'Closing')
+        title = t('En el nombre del Padre', 'In the Name of the Father')
+        paras = [t(
+          'En el nombre del Padre, del Hijo y del Espíritu Santo.',
+          'In the name of the Father, and of the Son, and of the Holy Spirit.',
+        )]
+      }
+
+      const dmSections = [
+        { label: t('Inicio', 'Opening'), num: null as string | null, range: [0, 3] as [number, number] },
+        { label: t('Primera Decena', 'First Decade'), num: 'I', range: [4, 14] as [number, number] },
+        { label: t('Segunda Decena', 'Second Decade'), num: 'II', range: [15, 25] as [number, number] },
+        { label: t('Tercera Decena', 'Third Decade'), num: 'III', range: [26, 36] as [number, number] },
+        { label: t('Cuarta Decena', 'Fourth Decade'), num: 'IV', range: [37, 47] as [number, number] },
+        { label: t('Quinta Decena', 'Fifth Decade'), num: 'V', range: [48, 58] as [number, number] },
+        { label: t('Cierre', 'Closing'), num: null as string | null, range: [59, 63] as [number, number] },
+      ]
+
+      return (
+        <div className="fixed inset-0 z-30 hidden flex-col bg-[var(--rv-paper)] md:flex">
+          {/* Top bar */}
+          <div className="flex flex-shrink-0 items-center justify-between border-b border-[var(--rv-border)] px-8 py-3">
+            <div className="flex items-center gap-3">
+              <span className="text-[20px] font-semibold text-[#b2985f]">Rosario Virtual</span>
+              <span className="text-[var(--rv-border)]">|</span>
+              <span className="text-[20px] text-[var(--rv-ink-muted)]">
+                {t('Coronilla de la Divina Misericordia', 'Chaplet of Divine Mercy')}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setGlobalMenuOpen(true)}
+              className="border border-[var(--rv-ink)] px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.10em] hover:bg-[rgba(26,26,26,0.05)]"
+            >
+              {t('Menú', 'Menu')}
+            </button>
+          </div>
+
+          <div className="flex flex-1 overflow-hidden">
+            {/* Col 1: context image + section nav */}
+            <div className="flex w-[340px] flex-shrink-0 flex-col overflow-y-auto border-r border-[var(--rv-border)]">
+              <div className="p-6 pb-4">
+                <img
+                  src={image}
+                  alt=""
+                  draggable={false}
+                  className="w-full rounded border border-[var(--rv-border)] bg-white/40 object-contain"
+                  style={{ maxHeight: '260px' }}
+                />
+              </div>
+              <div className="mt-2 flex-1 px-6 pb-6">
+                {dmSections.map((section, i) => {
+                  const isCurrent = si >= section.range[0] && si <= section.range[1]
+                  const isDone = si > section.range[1]
+                  return (
+                    <div
+                      key={i}
+                      className={`flex items-start gap-3 border-l-2 py-3 pl-3 ${isCurrent ? 'border-[#b2985f]' : 'border-transparent'}`}
+                    >
+                      {section.num ? (
+                        <span className="w-6 flex-shrink-0 text-[13px] text-[#b2985f]">{section.num}</span>
+                      ) : (
+                        <span className="w-6 flex-shrink-0" />
+                      )}
+                      <span className={`text-[18px] leading-snug ${isCurrent ? 'font-semibold text-[var(--rv-ink)]' : 'text-[var(--rv-ink-muted)]'}`}>
+                        {section.label}
+                        {isDone ? <span className="ml-1 text-[#b2985f]">✓</span> : null}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Col 2: prayer text */}
+            <div
+              className="flex flex-1 flex-col justify-center overflow-y-auto px-16 py-10 cursor-pointer"
+              onClick={advance}
+            >
+              <motion.div
+                key={`dm-${si}`}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: isFadingOut ? 0 : 1, y: isFadingOut ? -8 : 0 }}
+                transition={{ duration: isFadingOut ? 0.3 : 0.2, ease: 'easeOut' }}
+                className="max-w-2xl"
+              >
+                <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--rv-ink-muted)]">
+                  {sectionLabel}
+                </p>
+                <h2 className="mb-2 text-[42px] font-medium leading-tight">{title}</h2>
+                {note ? (
+                  <p className="mb-4 text-[15px] font-semibold text-[var(--rv-rubric)]">{note}</p>
+                ) : null}
+                <hr className="mb-8 border-[var(--rv-border)]" />
+                {paras.map((p, i) => (
+                  <p key={i} className="mb-5 whitespace-pre-line text-justify text-[20px] leading-relaxed">
+                    {p}
+                  </p>
+                ))}
+              </motion.div>
+            </div>
+
+            {/* Col 3: chaplet progress graphic */}
+            <div className="flex w-[480px] flex-shrink-0 flex-col overflow-y-auto border-l border-[var(--rv-border)] px-10 py-8">
+              <RosaryProgress
+                loop={dmModel.loop}
+                medal={dmModel.medal}
+                tail={dmModel.tail}
+                cross={dmModel.cross}
+                onAdvance={advance}
+                onBack={() => navigate(computePrev(screen))}
+                centerEyebrow={t('Divina Misericordia', 'Divine Mercy')}
+                centerLabel={si >= 4 && si <= 58 ? sectionLabel : undefined}
+              />
+            </div>
+          </div>
+
+          {/* Bottom navigation */}
+          <div className="flex flex-shrink-0 items-center gap-5 border-t border-[var(--rv-border)] px-16 py-5">
+            <button
+              type="button"
+              onClick={() => navigate(computePrev(screen))}
+              className="flex items-center gap-2 border border-[var(--rv-border)] px-5 py-2.5 text-[12px] font-semibold uppercase tracking-[0.10em] hover:bg-[rgba(26,26,26,0.05)]"
+            >
+              ← {t('Anterior', 'Back')}
+            </button>
+            <button
+              type="button"
+              onClick={advance}
+              className="flex items-center gap-2 border border-[#b2985f] bg-[#b2985f] px-6 py-2.5 text-[12px] font-semibold uppercase tracking-[0.10em] text-white hover:bg-[#a08850]"
+            >
+              {si >= 63 ? t('Finalizar', 'Finish') : t('Continuar', 'Continue')} →
+            </button>
+            <span className="text-[13px] text-[var(--rv-ink-muted)]">
+              {t('o hacé click · espacio', 'or click anywhere · space')}
+            </span>
+          </div>
+        </div>
+      )
+    })() : null}
 
     <AppShell>
       <motion.div
@@ -2341,7 +2595,7 @@ export default function App() {
         </>
       ) : null}
 
-      <div className={`fixed bottom-0 left-0 right-0${(screen.kind === 'splash' || screen.kind === 'step' || screen.kind === 'done') ? ' md:hidden' : ''}`}>
+      <div className={`fixed bottom-0 left-0 right-0${(screen.kind === 'splash' || screen.kind === 'step' || screen.kind === 'done' || (screen.kind === 'standalone' && screen.prayerId === 'divina-misericordia')) ? ' md:hidden' : ''}`}>
         <div className="w-full rounded-t-3xl border-t border-[rgba(26,26,26,0.10)] bg-white/90 shadow-2xl backdrop-blur">
           <div
             className="mx-auto w-full max-w-xl px-5 pt-5"
