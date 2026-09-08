@@ -867,6 +867,12 @@ export default function App() {
     // Meditation text (avemaria beads inside mystery decades only)
     const isMisterioSeq = step.id.includes('misterio')
     const isAveMariaMisterioSeq = isMisterioSeq && !!item?.id?.startsWith('avemaria-')
+    const misterioNum = step.id === 'primer-misterio' ? 1
+      : step.id === 'segundo-misterio' ? 2
+      : step.id === 'tercer-misterio' ? 3
+      : step.id === 'cuarto-misterio' ? 4
+      : step.id === 'quinto-misterio' ? 5 : 0
+    const cita = isMisterioSeq && misterioNum > 0 ? (CITAS_BIBLICAS[mystery.id]?.[misterioNum] ?? '') : ''
     const meditationText = (() => {
       if (!isAveMariaMisterioSeq) return null
       const match = item?.id?.match(/avemaria-(\d+)/)
@@ -903,6 +909,7 @@ export default function App() {
       total: step.sequence.items.length,
       current: screen.sequenceIndex,
       meditationText: showMeditaciones ? meditationText : null,
+      cita,
     }
   })()
 
@@ -1210,14 +1217,14 @@ export default function App() {
         <div className="flex flex-1 overflow-hidden">
 
           {/* ── Col 1: Context panel (mystery image + section steps) ── */}
-          <div className="flex w-[340px] flex-shrink-0 flex-col overflow-y-auto border-r border-[var(--rv-border)]">
-            <div className="p-6 pb-4">
+          <div className="flex w-[480px] flex-shrink-0 flex-col overflow-y-auto border-r border-[var(--rv-border)]">
+            <div className="p-8 pb-4">
               {desktopContextImage === cruzPng ? (
                 <img
                   src={desktopContextImage}
                   alt=""
                   draggable={false}
-                  className="mx-auto h-[260px] w-auto max-w-full object-contain"
+                  className="mx-auto h-[320px] w-auto max-w-full object-contain"
                 />
               ) : (
                 <img
@@ -1225,15 +1232,15 @@ export default function App() {
                   alt=""
                   draggable={false}
                   className="w-full rounded border border-[var(--rv-border)] object-cover"
-                  style={{ maxHeight: '260px', objectPosition: 'center top' }}
+                  style={{ maxHeight: '380px', objectPosition: 'center top' }}
                 />
               )}
             </div>
-            <div className="px-6 pt-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#b2985f]">
+            <div className="px-8 pt-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#b2985f]">
               {desktopSectionLabel}
             </div>
             {/* High-level section navigation */}
-            <div className="mt-2 flex-1 px-6 pb-6">
+            <div className="mt-2 flex-1 px-8 pb-6">
               {[
                 { label: idioma === 'en' ? 'Opening' : 'Inicio', num: null, range: [0, 1] as [number, number] },
                 { label: idioma === 'en' ? "Pope's Intentions" : 'Intenciones del Papa', num: null, range: [2, 2] as [number, number] },
@@ -1329,9 +1336,14 @@ export default function App() {
                   /* Contemplation-first: the mystery meditation is the focus, the
                      Hail Mary prayer supports it underneath */
                   <div className="max-w-2xl">
-                    <p className="mb-7 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#b2985f]">
-                      {desktopSectionLabel} · {desktopCenterContent.sequenceTitle}
-                    </p>
+                    <div className="mb-7">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#b2985f]">
+                        {desktopSectionLabel} · {desktopCenterContent.sequenceTitle}
+                      </p>
+                      {desktopCenterContent.cita ? (
+                        <p className="mt-1.5 text-[15px] text-[var(--rv-rubric)]">{desktopCenterContent.cita}</p>
+                      ) : null}
+                    </div>
                     <p className="whitespace-pre-line text-[38px] font-medium italic leading-[1.28] text-[var(--rv-ink)]">
                       {desktopCenterContent.meditationText}
                     </p>
@@ -1351,9 +1363,12 @@ export default function App() {
                     <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--rv-ink-muted)]">
                       {desktopSectionLabel} · {desktopCenterContent.sequenceTitle}
                     </p>
-                    <h2 className="mb-6 text-[42px] font-medium leading-tight">
+                    <h2 className={`text-[42px] font-medium leading-tight ${desktopCenterContent.cita ? 'mb-2' : 'mb-6'}`}>
                       {desktopCenterContent.prayerName}
                     </h2>
+                    {desktopCenterContent.cita ? (
+                      <p className="mb-6 text-[15px] text-[var(--rv-rubric)]">{desktopCenterContent.cita}</p>
+                    ) : null}
                     <hr className="mb-8 border-[var(--rv-border)]" />
                     {desktopCenterContent.text.split('\n\n').filter(Boolean).map((p, i) => (
                       <p key={i} className="mb-5 whitespace-pre-line text-justify text-[20px] leading-relaxed">
@@ -1521,17 +1536,17 @@ export default function App() {
 
           <div className="flex flex-1 overflow-hidden">
             {/* Col 1: context image + section nav */}
-            <div className="flex w-[340px] flex-shrink-0 flex-col overflow-y-auto border-r border-[var(--rv-border)]">
-              <div className="p-6 pb-4">
+            <div className="flex w-[480px] flex-shrink-0 flex-col overflow-y-auto border-r border-[var(--rv-border)]">
+              <div className="p-8 pb-4">
                 <img
                   src={image}
                   alt=""
                   draggable={false}
                   className="w-full rounded border border-[var(--rv-border)] bg-white/40 object-contain"
-                  style={{ maxHeight: '260px' }}
+                  style={{ maxHeight: '380px' }}
                 />
               </div>
-              <div className="mt-2 flex-1 px-6 pb-6">
+              <div className="mt-2 flex-1 px-8 pb-6">
                 {dmSections.map((section, i) => {
                   const isCurrent = si >= section.range[0] && si <= section.range[1]
                   const isDone = si > section.range[1]
