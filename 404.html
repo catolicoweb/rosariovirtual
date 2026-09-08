@@ -1,13 +1,20 @@
 <!doctype html>
 <html lang="es">
   <head>
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XNMG3T550S"></script>
+    <!-- Google tag (gtag.js) — production only, so localhost/previews don't pollute analytics -->
     <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-XNMG3T550S');
+      (function () {
+        var host = location.hostname;
+        if (host !== 'rosariovirtual.com' && host !== 'www.rosariovirtual.com') return;
+        var s = document.createElement('script');
+        s.async = true;
+        s.src = 'https://www.googletagmanager.com/gtag/js?id=G-XNMG3T550S';
+        document.head.appendChild(s);
+        window.dataLayer = window.dataLayer || [];
+        window.gtag = function () { dataLayer.push(arguments); };
+        gtag('js', new Date());
+        gtag('config', 'G-XNMG3T550S');
+      })();
     </script>
     <meta charset="UTF-8" />
     <link rel="icon" href="/cruz.ico" sizes="any" />
