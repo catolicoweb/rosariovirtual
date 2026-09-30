@@ -374,6 +374,12 @@ export default function App() {
   const includedLitanyRef = useRef<boolean>(false)
   // Analytics: latest in-progress location, read by the abandon handler on tab hide
   const abandonInfoRef = useRef<{ step: string; mystery: string } | null>(null)
+  // Analytics: prevents rosary_abandon from firing more than once per attempt
+  const abandonFiredRef = useRef<boolean>(false)
+  // Analytics: timestamp (ms) when the current rosary attempt started
+  const rosaryStartTimeRef = useRef<number | null>(null)
+  // Analytics: type of the active rosary ('santo_rosario' | 'coronilla')
+  const rosaryTypeRef = useRef<string | null>(null)
   const [showPrayerExpanded, setShowPrayerExpanded] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false
     try {
@@ -428,7 +434,10 @@ export default function App() {
     }
   })
 
+  // Analytics: mirrors idioma state so the abandon closure always reads the latest value
+  const idiomaRef = useRef(idioma)
   useEffect(() => {
+    idiomaRef.current = idioma
     try {
       window.localStorage.setItem('rv_idioma', idioma)
     } catch {
@@ -545,19 +554,65 @@ export default function App() {
     }
   }, [screen, activeSteps, mystery.label])
 
-  // Analytics: report where the user left when the tab is hidden/closed mid-prayer
+  // Analytics: report where the user left when they actually close/leave mid-prayer.
+  //
+  // Why not plain visibilitychange:
+  //   On Android WebView and iOS in-app browsers (Facebook/Instagram) the page loses
+  //   visibility on every notification, screen lock, or brief app-switch — triggering
+  //   the old handler 3-4 times per session even when the user returns immediately.
+  //
+  // Strategy:
+  //   • pagehide  — fires on real navigation/tab close; send immediately.
+  //   • visibilitychange (debounced 15 s) — catches WebView suspensions where pagehide
+  //     never fires; the 15-second delay filters out brief switches.
+  //   • abandonFiredRef — one-shot guard, reset only when a new rosary_start fires.
   useEffect(() => {
-    const onVisibility = () => {
-      if (document.visibilityState !== 'hidden') return
+    let debounceTimer: number | null = null
+
+    function fireAbandon() {
+      if (abandonFiredRef.current) return
       const info = abandonInfoRef.current
       if (!info) return
-      trackEvent('rosary_abandon', { step: info.step, mystery_name: info.mystery })
+      abandonFiredRef.current = true
+      const startTime = rosaryStartTimeRef.current
+      const sessionDuration = startTime !== null
+        ? Math.floor((Date.now() - startTime) / 1000)
+        : -1
+      trackEvent('rosary_abandon', {
+        rosary_abandon_step: info.step,
+        mystery_name: info.mystery,
+        rosary_type: rosaryTypeRef.current ?? 'unknown',
+        session_duration_at_abandon: sessionDuration,
+        language: idiomaRef.current,
+      })
     }
+
+    const onPageHide = () => {
+      if (debounceTimer !== null) { window.clearTimeout(debounceTimer); debounceTimer = null }
+      fireAbandon()
+    }
+
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') {
+        debounceTimer = window.setTimeout(fireAbandon, 15_000)
+      } else {
+        if (debounceTimer !== null) { window.clearTimeout(debounceTimer); debounceTimer = null }
+      }
+    }
+
+    window.addEventListener('pagehide', onPageHide)
     document.addEventListener('visibilitychange', onVisibility)
-    return () => document.removeEventListener('visibilitychange', onVisibility)
+    return () => {
+      window.removeEventListener('pagehide', onPageHide)
+      document.removeEventListener('visibilitychange', onVisibility)
+      if (debounceTimer !== null) window.clearTimeout(debounceTimer)
+    }
   }, [])
 
   function trackEvent(name: string, params: Record<string, string | number>) {
+    if (name === 'rosary_complete') {
+      try { localStorage.removeItem('rv_rosary_in_progress') } catch { /* noop */ }
+    }
     if (typeof gtag === 'function') {
       gtag('event', name, params)
     }
@@ -723,10 +778,34 @@ export default function App() {
     if (screen.kind === 'splash') {
       firedMilestonesRef.current.clear()
       includedLitanyRef.current = false
-      if (next.kind === 'step') {
-        trackEvent('rosary_start', { type: 'santo_rosario', mystery_name: mystery.label })
-      } else if (next.kind === 'standalone' && next.prayerId === 'divina-misericordia') {
-        trackEvent('rosary_start', { type: 'coronilla', mystery_name: 'Coronilla de la Divina Misericordia' })
+      if (next.kind === 'step' || (next.kind === 'standalone' && next.prayerId === 'divina-misericordia')) {
+        abandonFiredRef.current = false
+        rosaryStartTimeRef.current = Date.now()
+
+        const isReconnected = (() => {
+          try { return localStorage.getItem('rv_rosary_in_progress') === '1' } catch { return false }
+        })()
+        try { localStorage.setItem('rv_rosary_in_progress', '1') } catch { /* noop */ }
+
+        if (next.kind === 'step') {
+          rosaryTypeRef.current = 'santo_rosario'
+          trackEvent('rosary_start', {
+            type: 'santo_rosario',
+            rosary_type: 'santo_rosario',
+            mystery_name: mystery.label,
+            is_reconnected: isReconnected ? 1 : 0,
+            language: idioma,
+          })
+        } else {
+          rosaryTypeRef.current = 'coronilla'
+          trackEvent('rosary_start', {
+            type: 'coronilla',
+            rosary_type: 'coronilla',
+            mystery_name: 'Coronilla de la Divina Misericordia',
+            is_reconnected: isReconnected ? 1 : 0,
+            language: idioma,
+          })
+        }
       }
     }
 
